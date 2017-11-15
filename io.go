@@ -132,3 +132,21 @@ retry:
 	line = _line[:n+len(line)]
 	return
 }
+
+type CatBlobWriter struct {
+	w io.Writer
+}
+
+func (cbw *CatBlobWriter) WriteLine(a ...interface{}) error {
+	_, err := fmt.Fprintln(cbw.w, a...)
+	return err
+}
+
+func (cbw *CatBlobWriter) WriteBlob(sha1 string, data []byte) error {
+	err := cbw.WriteLine(sha1, "blob", len(data))
+	if err != nil {
+		return err
+	}
+	_, err = cbw.w.Write(data)
+	return err
+}
