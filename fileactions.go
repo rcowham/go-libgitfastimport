@@ -1,43 +1,47 @@
+package libfastimport
+
 type FileAction interface {
-	fiWrite(fi *FastImport) error
+	fiWriteFA(*FIWriter) error
 }
 
 type FileModify struct {
-	Mode    FileMode
-	Path    string
+	Mode    Mode
+	Path    Path
 	DataRef string
 }
 
-func (o FileModify) fiWrite(fi *FastImport) error {
-	return fi.printf(w, "M %06o %s %s\n", o.Mode, o.DataRef, pathEscape(o.Path))
+func (o FileModify) fiWriteFA(fiw *FIWriter) error {
+	return fiw.WriteLine("M", o.Mode, o.DataRef, o.Path)
 }
 
 type FileModifyInline struct {
-	Mode FileMode
-	Path string
+	Mode Mode
+	Path Path
 	Data []byte
 }
 
-func (o FileModifyInline) fiWrite(fi *FastImport) error {
-	fi.printf("M %06o inline %s\n", o.Mode, pathEscape(o.Path))
-	return fi.data(o.Data)
+func (o FileModifyInline) fiWriteFA(fiw *FIWriter) error {
+	ez := &ezfiw{fiw: fiw}
+	ez.WriteLine("M", o.Mode, "inline", o.Path)
+	ez.WriteData(o.Data)
+	return ez.err
 }
 
 type FileDelete struct {
-	Path string
+	Path Path
 }
 
-func (o FileDelete) fiWrite(fi *FastImport) error {
-	return fi.printf("D %s\n", pathEscape(o.Path))
+func (o FileDelete) fiWriteFA(fiw *FIWriter) error {
+	return fiw.WriteLine("D", o.Path)
 }
 
 type FileCopy struct {
-	Src string
-	Dst string
+	Src Path
+	Dst Path
 }
 
-func (o FileCopy) fiWrite(fi *FastImport) error {
-	return fi.printf("C %s %s\n", pathEscape(o.Src), pathEscape(o.Dst))
+func (o FileCopy) fiWriteFA(fiw *FIWriter) error {
+	return fiw.WriteLine("C", o.Src, o.Dst)
 }
 
 type FileRename struct {
@@ -45,14 +49,14 @@ type FileRename struct {
 	Dst string
 }
 
-func (o FileRename) fiWrite(fi *FastImport) error {
-	return fi.printf("R %s %s\n", pathEscape(o.Src), pathEscape(o.Dst))
+func (o FileRename) fiWriteFA(fiw *FIWriter) error {
+	return fiw.WriteLine("R", o.Src, o.Dst)
 }
 
 type FileDeleteAll struct{}
 
-func (o FileDeleteAll) fiWrite(fi *FastImport) error {
-	return fi.printf("deleteall\n")
+func (o FileDeleteAll) fiWriteFA(fiw *FIWriter) error {
+	return fiw.WriteLine("deleteall")
 }
 
 type NoteModify struct {
@@ -60,8 +64,8 @@ type NoteModify struct {
 	DataRef   string
 }
 
-func (o NoteModify) fiWrite(fi *FastImport) error {
-	return fi.printf("N %s %s\n", o.DataRef, o.CommitIsh)
+func (o NoteModify) fiWriteFA(fiw *FIWriter) error {
+	return fiw.WriteLine("N", o.DataRef, o.CommitIsh)
 }
 
 type NoteModifyInline struct {
@@ -69,8 +73,18 @@ type NoteModifyInline struct {
 	Data      []byte
 }
 
-func (o NoteModify) fiWrite(fi *FastImport) error {
-	fi.printf("N inline %s\n", o.CommitIsh)
-	return fi.data(o.Data)
+func (o NoteModifyInline) fiWriteFA(fiw *FIWriter) error {
+	ez := &ezfiw{fiw: fiw}
+	ez.WriteLine("N", "inline", o.CommitIsh)
+	ez.WriteData(o.Data)
+	return ez.err
 }
 
+// See CmdLs for using ls outside of a commit
+type FileLs struct {
+	Path Path
+}
+
+func (o FileLs) fiWriteFA(fiw *FIWriter) error {
+	return fiw.WriteLine("ls", o.Path)
+}

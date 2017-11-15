@@ -4,32 +4,8 @@ import (
 	"strconv"
 )
 
-type ezfiw struct {
-	fiw *FIWriter
-	err error
-}
-
-func (e *ezfiw) WriteLine(a ...interface{}) {
-	if e.err == nil {
-		e.err = e.fiw.WriteLine(a...)
-	}
-}
-
-func (e *ezfiw) WriteData(data []byte) {
-	if e.err == nil {
-		e.err = e.fiw.WriteData(data)
-	}
-}
-
-func (e *ezfiw) WriteMark(idnum int) {
-	if e.err == nil {
-		e.err = e.fiw.WriteLine("mark", ":"+strconv.Itoa(idnum))
-	}
-}
-
 type Cmd interface {
 	fiWriteCmd(*FIWriter) error
-	fiReadCmd(*FIReader) error
 }
 
 type CmdCommit struct {
@@ -53,7 +29,7 @@ func (c *CmdCommit) fiWriteCmd(fiw *FIWriter) error {
 		ez.WriteLine("author", *c.Author)
 	}
 	ez.WriteLine("committer", c.Committer)
-	ez.WriteData(c.Data)
+	ez.WriteData(c.Msg)
 	if len(c.Parents) > 0 {
 		ez.WriteLine("from", c.Parents[0])
 		if len(c.Parents) > 1 {
@@ -68,7 +44,7 @@ func (c *CmdCommit) fiWriteCmd(fiw *FIWriter) error {
 	}
 
 	for _, action := range c.Tree {
-		err := action.fiWriteFA(fi)
+		err := action.fiWriteFA(fiw)
 		if err != nil {
 			return err
 		}
@@ -120,7 +96,7 @@ func (c *CmdBlob) fiWriteCmd(fiw *FIWriter) error {
 	ez := &ezfiw{fiw: fiw}
 
 	ez.WriteLine("blob")
-	if mark > 0 {
+	if c.Mark > 0 {
 		ez.WriteMark(c.Mark)
 	}
 	ez.WriteData(c.Data)
@@ -146,7 +122,7 @@ type CmdGetMark struct {
 	Mark int
 }
 
-func (c *CmdGetmark) fiWriteCmd(fiw *FIWriter) error {
+func (c *CmdGetMark) fiWriteCmd(fiw *FIWriter) error {
 	return fiw.WriteLine("get-mark", ":"+strconv.Itoa(c.Mark))
 }
 

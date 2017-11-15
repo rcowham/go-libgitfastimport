@@ -43,7 +43,7 @@ func (m Mode) String() string {
 }
 
 func PathEscape(path string) string {
-	if strings.HasPrefix(path, "\"") || strings.ContainsRune("\n") {
+	if strings.HasPrefix(path, "\"") || strings.ContainsRune(path, '\n') {
 		return "\"" + strings.Replace(strings.Replace(strings.Replace(path, "\\", "\\\\", -1), "\"", "\\\"", -1), "\n", "\\n", -1) + "\""
 	} else {
 		return path

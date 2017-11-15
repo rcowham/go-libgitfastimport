@@ -1,118 +1,69 @@
 package libfastimport
 
 import (
-	"time"
+	"fmt"
+	"bytes"
+	"strconv"
 )
 
-type FastImport struct {
-	w   *FIWriter
-	r   *CatBlobReader
-	err error
-}
-
-func (fi *FastImport) GetMark(mark int) (string, error) {
-	if fi.printf("get-mark :%d\n", mark) != nil {
-		return "", fi.ioErr
-	}
-	var dat [41]byte
-	var n int
-	_, fi.ioErr = io.ReadFull(fi.r, dat[:])
-	if fi.ioErr != nil {
-		return "", fi.ioErr
+func CatBlobParseGetMark(dat []byte) (string, error) {
+	if len(dat) != 41 {
+		return "", fmt.Errorf("get-mark: short <sha1>\\n: %q", string(dat))
 	}
 	if dat[40] != '\n' {
-		fi.ioErr = fmt.Errorf("get-mark: malformed <sha1>\\n: %q", string(dat))
-		return "", fi.ioErr
+		return "", fmt.Errorf("get-mark: malformed <sha1>\\n: %q", string(dat))
 	}
 	for _, b := range dat[:40] {
 		if !(('0' <= b && b <= '9') || ('a' <= b && b <= 'f')) {
-			fi.ioErr = fmt.Errorf("get-mark: malformed <sha1>: %q", string(dat[:40]))
-			return "", fi.ioErr
+			return "", fmt.Errorf("get-mark: malformed <sha1>: %q", string(dat[:40]))
 		}
 	}
-	return string(dat[:40])
+	return string(dat[:40]), nil
 }
 
-func (fi *FastImport) CatBlob(dataref string) (sha1 string, data []byte, err error) {
-	if fi.println("cat-blob %s\n", dataref) != nil {
-		return "", nil, fi.ioErr
-	}
-	//    <sha1> SP 'blob' SP <size> LF
+func CatBlobParseCatBlob(full []byte) (sha1 string, data []byte, err error) {
+	// The format is:
 	//
-	// That comes out to be 47+len(itoa(size)).  Assuming that
-	// size is at most a 64-bit integer (a safe assumption), then
-	// its limit is 20 digits.
-	var head [67]byte
-	i := 0
-	for {
-		_, fi.ioErr = io.ReadFull(fi.r, head[i:i+1])
-		if fi.ioErr != nil {
-			return "", nil, fi.ioErr
-		}
-		if head[i] == '\n' {
-			break
-		}
-		i++
-		if i == len(head) {
-			fi.ioErr = fmt.Errorf("cat-blob: overly-long header line: %q", string(head))
-			return "", nil, fi.ioErr
-		}
+	//    <sha1> SP 'blob' SP <size> LF
+	//    <data> LF
+
+	lf := bytes.IndexByte(full, '\n')
+	if lf < 0 || lf == len(full)-1 {
+		return "", nil, fmt.Errorf("cat-blob: malformed header: %q", string(full))
 	}
-	i--
-	if head[i] != '\n' {
-		panic("wut")
+	head := full[:lf]
+	data = full[lf+1:len(full)-1]
+
+	if len(head) < 40+6+1 {
+		return "", nil, fmt.Errorf("cat-blob: malformed header: %q", string(head))
 	}
-	for _, b := range head[:40] {
+
+	sha1 = string(head[:40])
+	for _, b := range sha1 {
 		if !(('0' <= b && b <= '9') || ('a' <= b && b <= 'f')) {
-			fi.ioErr = fmt.Errorf("cat-blob: malformed <sha1>: %q", string(head[:40]))
-			return "", nil, fi.ioErr
+			return "", nil, fmt.Errorf("cat-blob: malformed <sha1>: %q", sha1)
 		}
 	}
+
 	if string(head[40:46]) != " blob " {
-		fi.ioErr = fmt.Errorf("cat-blob: malformed header: %q", string(head[:i]))
-		return "", nil, fi.ioErr
+		return "", nil, fmt.Errorf("cat-blob: malformed header: %q", head)
 	}
-	size, err := strconv.Atoi(string(head[46:i]))
+
+	size, err := strconv.Atoi(string(head[46:]))
 	if err != nil {
-		fi.ioErr = fmt.Errorf("cat-blob: malformed blob size: %v", err)
-		return "", nil, fi.ioErr
+		return "", nil, fmt.Errorf("cat-blob: malformed blob size: %v", err)
 	}
-	dat := make([]byte, size+1)
-	_, fi.ioErr = io.ReadFull(fi.r, dat)
-	if dat[size] != '\n' {
-		fi.ioErr = fmt.Errorf("cat-blob: expected newline after data")
-		return "", nil, fi.ioErr
+
+	if size != len(data) {
+		return "", nil, fmt.Errorf("cat-blob: size header (%d) didn't match delivered size (%d)", size, len(data))
 	}
-	return string(head[:40]), dat[:size], nil
+
+	return sha1, data, err
 }
 
-func (fi *FastImport) Ls(dataref string, path string) error {
-	if dataref == "" {
-		fi.printf("ls %s\n", quotePath(path))
-	} else {
-		fi.printf("ls %s %s\n", dataref, quotePath(path))
-	}
-	if fi.ioErr != nil {
-		return fi.ioErr
-	}
-	k
-}
-func (fi *FastImport) Feature() error
-func (fi *FastImport) Option() error
-
-func (fi *FastImport) Done() error {
-	fi.printf("done\n")
-	if fi.ioErr == nil {
-		fi.ioErr = w.Close()
-	}
-	return fi.ioErr
-}
-
-func init() {
-	x := exec.Cmd{
-		Path: prog["git"],
-		Args: {"git", "fast-import",
-			"--done",
-			"--cat-blob-fd=" + strconv.Itoa(TODO)},
-	}
+func CatBlobParseLs(dataref string, path string) error {
+	//     <mode> SP ('blob' | 'tree' | 'commit') SP <dataref> HT <path> LF
+	// or
+	//     'missing' SP <path> LF
+	return nil // TODO
 }

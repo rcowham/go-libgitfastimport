@@ -1,6 +1,7 @@
 package libfastimport
 
 import (
+	"fmt"
 	"bufio"
 	"bytes"
 	"io"
@@ -39,7 +40,7 @@ retry:
 
 			for !bytes.HasSuffix(line, suffix) {
 				_line, err = fir.r.ReadSlice('\n')
-				line == append(line, _line)
+				line = append(line, _line...)
 				if err != nil {
 					return
 				}
@@ -53,7 +54,8 @@ retry:
 			}
 			_line := make([]byte, size+len(line))
 			copy(_line, line)
-			n, err := io.ReadFull(fir.r, _line[len(line):])
+			var n int
+			n, err = io.ReadFull(fir.r, _line[len(line):])
 			line = _line[:n+len(line)]
 		}
 	}
@@ -70,12 +72,12 @@ func NewFIWriter(w io.Writer) *FIWriter {
 	}
 }
 
-func (fiw *FIReader) WriteLine(a ...interface{}) error {
+func (fiw *FIWriter) WriteLine(a ...interface{}) error {
 	_, err := fmt.Fprintln(fiw.w, a...)
 	return err
 }
 
-func (fiw *FIReader) WriteData(data []byte) error {
+func (fiw *FIWriter) WriteData(data []byte) error {
 	err := fiw.WriteLine("data", len(data))
 	if err != nil {
 		return err
@@ -96,7 +98,7 @@ func NewCatBlobReader(r io.Reader) *CatBlobReader {
 
 func (cbr *CatBlobReader) ReadSlice() (line []byte, err error) {
 retry:
-	line, err = fir.r.ReadSlice('\n')
+	line, err = cbr.r.ReadSlice('\n')
 	if err != nil {
 		return
 	}
@@ -124,9 +126,9 @@ retry:
 	if err != nil {
 		return
 	}
-	_line = make([]byte, len(line)+size+1)
+	_line := make([]byte, len(line)+size+1)
 	copy(_line, line)
-	n, err := io.ReadFull(fir.r, _line[len(line):])
+	n, err := io.ReadFull(cbr.r, _line[len(line):])
 	line = _line[:n+len(line)]
 	return
 }

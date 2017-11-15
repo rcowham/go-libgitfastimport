@@ -23,33 +23,26 @@ func (p *Parser) GetCmd() (Cmd, error) {
 			return nil, err
 		}
 	}
-	return p.cmd, nil
+	return <-p.cmd, nil
 }
 
 func (p *Parser) putSlice(slice []byte) error {
-}
-
-func utSlice(fir *FIReader) (Cmd, error) {
-	slice, err := fir.PeekSlice()
-	if err != nil {
-		return nil, err
-	}
 	if len(slice) < 1 {
-		return nil, UnsupportedCommand(slice)
+		return UnsupportedCommand(slice)
 	}
 	switch slice[0] {
 	case '#': // comment
 	case 'b': // blob
 	case 'c':
 		if len(slice) < 2 {
-			return nil, UnsupportedCommand(slice)
+			return UnsupportedCommand(slice)
 		}
 		switch slice[1] {
 		case 'o': // commit
 		case 'h': // checkpoint
 		case 'a': // cat-blob
 		default:
-			return nil, UnsupportedCommand(slice)
+			return UnsupportedCommand(slice)
 		}
 	case 'd': // done
 	case 'f': // feature
@@ -60,6 +53,7 @@ func utSlice(fir *FIReader) (Cmd, error) {
 	case 'r': // reset
 	case 't': // tag
 	default:
-		return nil, UnsupportedCommand(slice)
+		return UnsupportedCommand(slice)
 	}
+	return nil // TODO
 }
