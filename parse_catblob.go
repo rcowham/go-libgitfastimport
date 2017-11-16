@@ -2,8 +2,8 @@ package libfastimport
 
 import (
 	"fmt"
-	"strings"
 	"strconv"
+	"strings"
 
 	"git.lukeshu.com/go/libfastimport/textproto"
 )
@@ -38,7 +38,7 @@ func cbpCatBlob(full string) (sha1 string, data string, err error) {
 		return "", "", fmt.Errorf("cat-blob: malformed header: %q", full)
 	}
 	head := full[:lf]
-	data = full[lf+1:len(full)-1]
+	data = full[lf+1 : len(full)-1]
 
 	if len(head) < 40+6+1 {
 		return "", "", fmt.Errorf("cat-blob: malformed header: %q", head)
@@ -75,7 +75,7 @@ func cbpLs(line string) (mode textproto.Mode, dataref string, path textproto.Pat
 		return 0, "", "", fmt.Errorf("ls: missing trailing newline")
 	}
 	if strings.HasPrefix(line, "missing ") {
-		strPath := line[8:len(line)-1]
+		strPath := line[8 : len(line)-1]
 		return 0, "", textproto.PathUnescape(strPath), nil
 	} else {
 		sp1 := strings.IndexByte(line, ' ')
@@ -85,8 +85,8 @@ func cbpLs(line string) (mode textproto.Mode, dataref string, path textproto.Pat
 			return 0, "", "", fmt.Errorf("ls: malformed line: %q", line)
 		}
 		strMode := line[:sp1]
-		strRef := line[sp2+1:ht]
-		strPath := line[ht+1:len(line)-1]
+		strRef := line[sp2+1 : ht]
+		strPath := line[ht+1 : len(line)-1]
 
 		nMode, err := strconv.ParseUint(strMode, 8, 18)
 		if err != nil {

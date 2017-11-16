@@ -128,7 +128,7 @@ type CatBlobWriter struct {
 }
 
 func NewCatBlobWriter(w io.Writer) *CatBlobWriter {
-	return &CatBlobWriter {
+	return &CatBlobWriter{
 		w: w,
 	}
 }

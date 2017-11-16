@@ -1,8 +1,8 @@
 package libfastimport
 
 import (
-	"io"
 	"bufio"
+	"io"
 
 	"git.lukeshu.com/go/libfastimport/textproto"
 )
@@ -10,7 +10,7 @@ import (
 // A Backend is something that consumes a fast-import stream; the
 // Backend object provides methods for writing to it.
 type Backend struct {
-	w *bufio.Writer
+	w   *bufio.Writer
 	fiw *textproto.FIWriter
 	cbr *textproto.CatBlobReader
 }
