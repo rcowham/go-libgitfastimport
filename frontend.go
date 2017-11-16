@@ -16,6 +16,16 @@ func (e UnsupportedCommand) Error() string {
 	return "Unsupported command: " + string(e)
 }
 
+func trimLinePrefix(line string, prefix string) string {
+	if !strings.HasPrefix(line, prefix) {
+		panic("line didn't have prefix")
+	}
+	if !strings.HasSuffix(line, "\n") {
+		panic("line didn't have prefix")
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(line, prefix), "\n")
+}
+
 // A Frontend is something that produces a fast-import stream; the
 // Frontend object provides methods for reading from it.
 type Frontend struct {
@@ -53,19 +63,17 @@ func (f *Frontend) nextLine() (line string, err error) {
 			f.cmd <- CmdComment{Comment: line[1:]}
 		case strings.HasPrefix(line, "cat-blob "):
 			// 'cat-blob' SP <dataref> LF
-			dataref := strings.TrimSuffix(strings.TrimPrefix(line, "cat-blob "), "\n")
-			f.cmd <- CmdCatBlob{DataRef: dataref}
+			f.cmd <- CmdCatBlob{DataRef: trimLinePrefix(line, "cat-blob ")}
 		case strings.HasPrefix(line, "get-mark :"):
 			// 'get-mark' SP ':' <idnum> LF
-			strIdnum := strings.TrimSuffix(strings.TrimPrefix(line, "get-mark :"), "\n")
-			var nIdnum int
-			nIdnum, err = strconv.Atoi(strIdnum)
+			c := CmdGetMark{}
+			c.Mark, err = strconv.Atoi(trimLinePrefix(line, "get-mark :"))
 			if err != nil {
 				line = ""
 				err = fmt.Errorf("get-mark: %v", err)
 				return
 			}
-			f.cmd <- CmdGetMark{Mark: nIdnum}
+			f.cmd <- c
 		default:
 			return
 		}
@@ -77,14 +85,14 @@ func parse_data(line string) (data string, err error) {
 	if nl < 0 {
 		return "", fmt.Errorf("data: expected newline: %v", data)
 	}
-	head := line[:nl]
+	head := line[:nl+1]
 	rest := line[nl+1:]
 	if !strings.HasPrefix(head, "data ") {
 		return "", fmt.Errorf("data: could not parse: %v", data)
 	}
 	if strings.HasPrefix(head, "data <<") {
 		// Delimited format
-		delim := strings.TrimPrefix(head, "data <<")
+		delim := trimLinePrefix(head, "data <<")
 		suffix := "\n" + delim + "\n"
 		if !strings.HasSuffix(rest, suffix) {
 			return "", fmt.Errorf("data: did not find suffix: %v", suffix)
@@ -92,12 +100,11 @@ func parse_data(line string) (data string, err error) {
 		data = strings.TrimSuffix(rest, suffix)
 	} else {
 		// Exact byte count format
-		strN := strings.TrimSuffix(head, "data ")
-		intN, err := strconv.Atoi(strN)
+		size, err := strconv.Atoi(trimLinePrefix(head, "data "))
 		if err != nil {
 			return "", err
 		}
-		if intN != len(rest) {
+		if size != len(rest) {
 			panic("FIReader should not have let this happen")
 		}
 		data = rest
@@ -122,8 +129,7 @@ func (f *Frontend) parse() error {
 				return err
 			}
 			if strings.HasPrefix(line, "mark :") {
-				str := strings.TrimSuffix(strings.TrimPrefix(line, "mark :"), "\n")
-				c.Mark, err = strconv.Atoi(str)
+				c.Mark, err = strconv.Atoi(trimLinePrefix(line, "mark :"))
 				if err != nil {
 					return err
 				}
@@ -157,7 +163,7 @@ func (f *Frontend) parse() error {
 			continue
 		case strings.HasPrefix(line, "feature "):
 			// 'feature' SP <feature> ('=' <argument>)? LF
-			str := strings.TrimSuffix(strings.TrimPrefix(line, "feature "), "\n")
+			str := trimLinePrefix(line, "feature ")
 			eq := strings.IndexByte(str, '=')
 			if eq < 0 {
 				f.cmd <- CmdFeature{
@@ -178,28 +184,25 @@ func (f *Frontend) parse() error {
 				return fmt.Errorf("ls: outside of a commit both <dataref> and <path> are required: %v", line)
 			}
 			f.cmd <- CmdLs{
-				DataRef: line[sp1+1:sp2],
-				Path: textproto.PathUnescape(line[sp2+1:lf]),
+				DataRef: line[sp1+1 : sp2],
+				Path:    textproto.PathUnescape(line[sp2+1 : lf]),
 			}
 		case strings.HasPrefix(line, "option "):
 			// 'option' SP <option> LF
-			f.cmd <- CmdOption{Option: strings.TrimSuffix(strings.TrimPrefix(line, "option "), "\n")}
+			f.cmd <- CmdOption{Option: trimLinePrefix(line, "option ")}
 		case strings.HasPrefix(line, "progress "):
 			// 'progress' SP <any> LF
-			str := strings.TrimSuffix(strings.TrimPrefix(line, "progress "), "\n")
-			f.cmd <- CmdProgress{Str: str}
+			f.cmd <- CmdProgress{Str: trimLinePrefix(line, "progress ")}
 		case strings.HasPrefix(line, "reset "):
 			// 'reset' SP <ref> LF
 			// ('from' SP <commit-ish> LF)?
-			c := CmdReset{
-				RefName: strings.TrimSuffix(strings.TrimPrefix(line, "reset "), "\n")
-			}
+			c := CmdReset{RefName: trimLinePrefix(line, "reset ")}
 			line, err = f.nextLine()
 			if err != nil {
 				return err
 			}
 			if strings.HasPrefix(line, "from ") {
-				c.CommitIsh = strings.TrimSuffix(strings.TrimPrefix(line, "from "), "\n")
+				c.CommitIsh = trimLinePrefix(line, "from ")
 				line, err = f.nextLine()
 				if err != nil {
 					return err
