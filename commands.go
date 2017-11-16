@@ -16,7 +16,8 @@ type CmdCommit struct {
 	Author    *textproto.UserTime
 	Committer textproto.UserTime
 	Msg       []byte
-	Parents   []string
+	From      string
+	Merge     []string
 	Tree      []FileAction
 }
 
@@ -32,13 +33,11 @@ func (c CmdCommit) fiWriteCmd(fiw *textproto.FIWriter) error {
 	}
 	ez.WriteLine("committer", c.Committer)
 	ez.WriteData(c.Msg)
-	if len(c.Parents) > 0 {
-		ez.WriteLine("from", c.Parents[0])
-		if len(c.Parents) > 1 {
-			for _, parent := range c.Parents[1:] {
-				ez.WriteLine("merge", parent)
-			}
-		}
+	if c.From != "" {
+		ez.WriteLine("from", c.From)
+	}
+	for _, merge := range c.Merge {
+		ez.WriteLine("merge", merge)
 	}
 
 	if ez.err != nil {
