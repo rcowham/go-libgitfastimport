@@ -19,13 +19,11 @@ func NewFIReader(r io.Reader) *FIReader {
 }
 
 func (fir *FIReader) ReadLine() (line string, err error) {
-retry:
-	line, err = fir.r.ReadString('\n')
-	if err != nil {
-		return
-	}
-	if len(line) == 1 {
-		goto retry
+	for len(line) <= 1 {
+		line, err = fir.r.ReadString('\n')
+		if err != nil {
+			return
+		}
 	}
 
 	if strings.HasPrefix(line, "data ") {
@@ -92,13 +90,11 @@ func NewCatBlobReader(r io.Reader) *CatBlobReader {
 }
 
 func (cbr *CatBlobReader) ReadLine() (line string, err error) {
-retry:
-	line, err = cbr.r.ReadString('\n')
-	if err != nil {
-		return
-	}
-	if len(line) == 1 {
-		goto retry
+	for len(line) <= 1 {
+		line, err = cbr.r.ReadString('\n')
+		if err != nil {
+			return
+		}
 	}
 
 	// get-mark : <sha1> LF
