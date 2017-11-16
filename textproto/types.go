@@ -1,4 +1,4 @@
-package libfastimport
+package textproto
 
 import (
 	"fmt"
@@ -42,24 +42,24 @@ func (m Mode) String() string {
 	return fmt.Sprintf("%06o", m)
 }
 
-func PathEscape(path string) string {
-	if strings.HasPrefix(path, "\"") || strings.ContainsRune(path, '\n') {
-		return "\"" + strings.Replace(strings.Replace(strings.Replace(path, "\\", "\\\\", -1), "\"", "\\\"", -1), "\n", "\\n", -1) + "\""
+func PathEscape(path Path) string {
+	if strings.HasPrefix(string(path), "\"") || strings.ContainsRune(string(path), '\n') {
+		return "\"" + strings.Replace(strings.Replace(strings.Replace(string(path), "\\", "\\\\", -1), "\"", "\\\"", -1), "\n", "\\n", -1) + "\""
 	} else {
-		return path
+		return string(path)
 	}
 }
 
-func PathUnescape(epath string) string {
+func PathUnescape(epath string) Path {
 	if strings.HasPrefix(epath, "\"") {
-		return strings.Replace(strings.Replace(strings.Replace(epath[1:len(epath)-1], "\\n", "\n", -1), "\\\"", "\"", -1), "\\\\", "\\", -1)
+		return Path(strings.Replace(strings.Replace(strings.Replace(epath[1:len(epath)-1], "\\n", "\n", -1), "\\\"", "\"", -1), "\\\\", "\\", -1))
 	} else {
-		return epath
+		return Path(epath)
 	}
 }
 
 type Path string
 
 func (p Path) String() string {
-	return PathEscape(string(p))
+	return PathEscape(p)
 }

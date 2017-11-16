@@ -1,5 +1,9 @@
 package libfastimport
 
+import (
+	"git.lukeshu.com/go/libfastimport/textproto"
+)
+
 type UnsupportedCommand string
 
 func (e UnsupportedCommand) Error() string {
@@ -7,18 +11,18 @@ func (e UnsupportedCommand) Error() string {
 }
 
 type Parser struct {
-	fir *FIReader
+	fir *textproto.FIReader
 
 	cmd chan Cmd
 }
 
 func (p *Parser) GetCmd() (Cmd, error) {
 	for p.cmd == nil {
-		slice, err := p.fir.ReadSlice()
+		line, err := p.fir.ReadLine()
 		if err != nil {
 			return nil, err
 		}
-		err = p.putSlice(slice)
+		err = p.putLine(line)
 		if err != nil {
 			return nil, err
 		}
@@ -26,23 +30,23 @@ func (p *Parser) GetCmd() (Cmd, error) {
 	return <-p.cmd, nil
 }
 
-func (p *Parser) putSlice(slice []byte) error {
-	if len(slice) < 1 {
-		return UnsupportedCommand(slice)
+func (p *Parser) putLine(line string) error {
+	if len(line) < 1 {
+		return UnsupportedCommand(line)
 	}
-	switch slice[0] {
+	switch line[0] {
 	case '#': // comment
 	case 'b': // blob
 	case 'c':
-		if len(slice) < 2 {
-			return UnsupportedCommand(slice)
+		if len(line) < 2 {
+			return UnsupportedCommand(line)
 		}
-		switch slice[1] {
+		switch line[1] {
 		case 'o': // commit
 		case 'h': // checkpoint
 		case 'a': // cat-blob
 		default:
-			return UnsupportedCommand(slice)
+			return UnsupportedCommand(line)
 		}
 	case 'd': // done
 	case 'f': // feature
@@ -53,7 +57,7 @@ func (p *Parser) putSlice(slice []byte) error {
 	case 'r': // reset
 	case 't': // tag
 	default:
-		return UnsupportedCommand(slice)
+		return UnsupportedCommand(line)
 	}
 	return nil // TODO
 }

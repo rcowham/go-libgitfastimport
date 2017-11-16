@@ -2,10 +2,12 @@ package libfastimport
 
 import (
 	"strconv"
+
+	"git.lukeshu.com/go/libfastimport/textproto"
 )
 
 type ezfiw struct {
-	fiw *FIWriter
+	fiw *textproto.FIWriter
 	err error
 }
 

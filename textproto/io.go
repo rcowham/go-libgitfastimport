@@ -1,11 +1,11 @@
-package libfastimport
+package textproto
 
 import (
-	"fmt"
 	"bufio"
-	"bytes"
+	"fmt"
 	"io"
 	"strconv"
+	"strings"
 )
 
 type FIReader struct {
@@ -18,9 +18,9 @@ func NewFIReader(r io.Reader) *FIReader {
 	}
 }
 
-func (fir *FIReader) ReadSlice() (line []byte, err error) {
+func (fir *FIReader) ReadLine() (line string, err error) {
 retry:
-	line, err = fir.r.ReadSlice('\n')
+	line, err = fir.r.ReadString('\n')
 	if err != nil {
 		return
 	}
@@ -28,19 +28,16 @@ retry:
 		goto retry
 	}
 
-	if bytes.HasPrefix(line, []byte("data ")) {
-		if string(line[5:7]) == "<<" {
+	if strings.HasPrefix(line, "data ") {
+		if line[5:7] == "<<" {
 			// Delimited format
 			delim := line[7 : len(line)-1]
-			suffix := []byte("\n" + string(delim) + "\n")
+			suffix := "\n" + delim + "\n"
 
-			_line := make([]byte, len(line))
-			copy(_line, line)
-			line = _line
-
-			for !bytes.HasSuffix(line, suffix) {
-				_line, err = fir.r.ReadSlice('\n')
-				line = append(line, _line...)
+			for !strings.HasSuffix(line, suffix) {
+				var _line string
+				_line, err = fir.r.ReadString('\n')
+				line += _line
 				if err != nil {
 					return
 				}
@@ -48,15 +45,13 @@ retry:
 		} else {
 			// Exact byte count format
 			var size int
-			size, err = strconv.Atoi(string(line[5 : len(line)-1]))
+			size, err = strconv.Atoi(line[5 : len(line)-1])
 			if err != nil {
 				return
 			}
-			_line := make([]byte, size+len(line))
-			copy(_line, line)
-			var n int
-			n, err = io.ReadFull(fir.r, _line[len(line):])
-			line = _line[:n+len(line)]
+			data := make([]byte, size)
+			_, err = io.ReadFull(fir.r, data)
+			line += string(data)
 		}
 	}
 	return
@@ -96,9 +91,9 @@ func NewCatBlobReader(r io.Reader) *CatBlobReader {
 	}
 }
 
-func (cbr *CatBlobReader) ReadSlice() (line []byte, err error) {
+func (cbr *CatBlobReader) ReadLine() (line string, err error) {
 retry:
-	line, err = cbr.r.ReadSlice('\n')
+	line, err = cbr.r.ReadString('\n')
 	if err != nil {
 		return
 	}
@@ -112,7 +107,7 @@ retry:
 	// ls       : 'missing' SP <path> LF
 
 	// decide if we have a cat-blob result
-	if len(line) <= 46 || string(line[40:46]) != " blob " {
+	if len(line) <= 46 || line[40:46] != " blob " {
 		return
 	}
 	for _, b := range line[:40] {
@@ -122,14 +117,13 @@ retry:
 	}
 	// we have a cat-blob result
 	var size int
-	size, err = strconv.Atoi(string(line[46 : len(line)-1]))
+	size, err = strconv.Atoi(line[46 : len(line)-1])
 	if err != nil {
 		return
 	}
-	_line := make([]byte, len(line)+size+1)
-	copy(_line, line)
-	n, err := io.ReadFull(cbr.r, _line[len(line):])
-	line = _line[:n+len(line)]
+	data := make([]byte, size+1)
+	_, err = io.ReadFull(cbr.r, data)
+	line += string(data[:size])
 	return
 }
 
