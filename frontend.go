@@ -159,7 +159,148 @@ func (f *Frontend) parse() error {
 			// ('from' SP <commit-ish> LF)?
 			// ('merge' SP <commit-ish> LF)*
 			// (filemodify | filedelete | filecopy | filerename | filedeleteall | notemodify)*
-			// TODO
+			c := CmdCommit{Ref: trimLinePrefix(line, "commit ")}
+
+			line, err = f.nextLine()
+			if err != nil {
+				return err
+			}
+			if strings.HasPrefix(line, "mark :") {
+				c.Mark, err = strconv.Atoi(trimLinePrefix(line, "mark :"))
+				if err != nil {
+					return err
+				}
+				line, err = f.nextLine()
+				if err != nil {
+					return err
+				}
+			}
+			if strings.HasPrefix(line, "author ") {
+				author, err := textproto.ParseIdent(trimLinePrefix(line, "author "))
+				if err != nil {
+					return err
+				}
+				c.Author = &author
+				line, err = f.nextLine()
+				if err != nil {
+					return err
+				}
+			}
+			if !strings.HasPrefix(line, "committer ") {
+				return fmt.Errorf("commit: expected committer command: %v", line)
+			}
+			c.Committer, err = textproto.ParseIdent(trimLinePrefix(line, "committer "))
+			if err != nil {
+				return err
+			}
+
+			line, err = f.nextLine()
+			if err != nil {
+				return err
+			}
+			if !strings.HasPrefix(line, "data ") {
+				return fmt.Errorf("commit: expected data command: %v", line)
+			}
+			c.Msg, err = parse_data(line)
+			if err != nil {
+				return err
+			}
+
+			line, err = f.nextLine()
+			if err != nil {
+				return err
+			}
+			if strings.HasPrefix(line, "from ") {
+				c.From = trimLinePrefix(line, "from ")
+				line, err = f.nextLine()
+				if err != nil {
+					return err
+				}
+			}
+			for strings.HasPrefix(line, "merge ") {
+				c.Merge = append(c.Merge, trimLinePrefix(line, "merge "))
+				line, err = f.nextLine()
+				if err != nil {
+					return err
+				}
+			}
+			for {
+				switch {
+				case strings.HasPrefix(line, "M "):
+					str := trimLinePrefix(line, "M ")
+					sp1 := strings.IndexByte(str, ' ')
+					sp2 := strings.IndexByte(str, ' ')
+					if sp1 < 0 || sp2 < 0 {
+						return fmt.Errorf("commit: malformed modify command: %v", line)
+					}
+					nMode, err := strconv.ParseUint(str[:sp1], 8, 18)
+					if err != nil {
+						return err
+					}
+					ref := str[sp1+1 : sp2]
+					path := textproto.PathUnescape(str[sp2+1:])
+					if ref == "inline" {
+						line, err = f.nextLine()
+						if err != nil {
+							return err
+						}
+						if !strings.HasPrefix(line, "data ") {
+							return fmt.Errorf("commit: modify: expected data command: %v", line)
+						}
+						data, err := parse_data(line)
+						if err != nil {
+							return err
+						}
+						c.Tree = append(c.Tree, FileModifyInline{Mode: textproto.Mode(nMode), Path: path, Data: data})
+					} else {
+						c.Tree = append(c.Tree, FileModify{Mode: textproto.Mode(nMode), Path: path, DataRef: ref})
+					}
+				case strings.HasPrefix(line, "D "):
+					c.Tree = append(c.Tree, FileDelete{Path: textproto.PathUnescape(trimLinePrefix(line, "D "))})
+				case strings.HasPrefix(line, "C "):
+					panic("C not implemented")
+					// TODO
+				case strings.HasPrefix(line, "R "):
+					panic("R not implemented")
+					// TODO
+				case strings.HasPrefix(line, "N "):
+					str := trimLinePrefix(line, "N ")
+					sp := strings.IndexByte(str, ' ')
+					if sp < 0 {
+						return fmt.Errorf("commit: malformed notemodify command: %v", line)
+					}
+					ref := str[:sp]
+					commitish := str[sp+1:]
+					if ref == "inline" {
+						line, err = f.nextLine()
+						if err != nil {
+							return err
+						}
+						if !strings.HasPrefix(line, "data ") {
+							return fmt.Errorf("commit: notemodify: expected data command: %v", line)
+						}
+						data, err := parse_data(line)
+						if err != nil {
+							return err
+						}
+						c.Tree = append(c.Tree, NoteModifyInline{CommitIsh: commitish, Data: data})
+					} else {
+						c.Tree = append(c.Tree, NoteModify{CommitIsh: commitish, DataRef: ref})
+					}
+				case strings.HasPrefix(line, "ls "):
+					panic("ls not implemented")
+					// TODO
+				case line == "deleteall\n":
+					c.Tree = append(c.Tree, FileDeleteAll{})
+				default:
+					break
+				}
+				line, err = f.nextLine()
+				if err != nil {
+					return err
+				}
+			}
+			f.cmd <- c
 			continue
 		case strings.HasPrefix(line, "feature "):
 			// 'feature' SP <feature> ('=' <argument>)? LF
