@@ -215,7 +215,38 @@ func (f *Frontend) parse() error {
 			// 'from' SP <commit-ish> LF
 			// 'tagger' (SP <name>)? SP LT <email> GT SP <when> LF
 			// data
-			// TODO
+			c := CmdTag{RefName: trimLinePrefix(line, "tag ")}
+
+			line, err = f.nextLine()
+			if err != nil {
+				return err
+			}
+			if !strings.HasPrefix(line, "from ") {
+				return fmt.Errorf("tag: expected from command: %v", line)
+			}
+			c.CommitIsh = trimLinePrefix(line, "from ")
+
+			line, err = f.nextLine()
+			if err != nil {
+				return err
+			}
+			if !strings.HasPrefix(line, "tagger ") {
+				return fmt.Errorf("tag: expected tagger command: %v", line)
+			}
+			c.Tagger, err = textproto.ParseUserTime(trimLinePrefix(line, "tagger "))
+			if err != nil {
+				return err
+			}
+
+			line, err = f.nextLine()
+			if err != nil {
+				return err
+			}
+			c.Data, err = parse_data(line)
+			if err != nil {
+				return err
+			}
+			f.cmd <- c
 		default:
 			return UnsupportedCommand(line)
 		}
