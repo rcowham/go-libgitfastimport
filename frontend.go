@@ -154,15 +154,36 @@ func (f *Frontend) parse() error {
 			// ('merge' SP <commit-ish> LF)*
 			// (filemodify | filedelete | filecopy | filerename | filedeleteall | notemodify)*
 			// TODO
+			continue
 		case strings.HasPrefix(line, "feature "):
 			// 'feature' SP <feature> ('=' <argument>)? LF
-			// TODO
+			str := strings.TrimSuffix(strings.TrimPrefix(line, "feature "), "\n")
+			eq := strings.IndexByte(str, '=')
+			if eq < 0 {
+				f.cmd <- CmdFeature{
+					Feature: str,
+				}
+			} else {
+				f.cmd <- CmdFeature{
+					Feature:  str[:eq],
+					Argument: str[eq+1:],
+				}
+			}
 		case strings.HasPrefix(line, "ls "):
 			// 'ls' SP <dataref> SP <path> LF
-			// TODO
+			sp1 := strings.IndexByte(line, ' ')
+			sp2 := strings.IndexByte(line[sp1+1:], ' ')
+			lf := strings.IndexByte(line[sp2+1:], '\n')
+			if sp1 < 0 || sp2 < 0 || lf < 0 {
+				return fmt.Errorf("ls: outside of a commit both <dataref> and <path> are required: %v", line)
+			}
+			f.cmd <- CmdLs{
+				DataRef: line[sp1+1:sp2],
+				Path: textproto.PathUnescape(line[sp2+1:lf]),
+			}
 		case strings.HasPrefix(line, "option "):
 			// 'option' SP <option> LF
-			// TODO
+			f.cmd <- CmdOption{Option: strings.TrimSuffix(strings.TrimPrefix(line, "option "), "\n")}
 		case strings.HasPrefix(line, "progress "):
 			// 'progress' SP <any> LF
 			str := strings.TrimSuffix(strings.TrimPrefix(line, "progress "), "\n")
@@ -170,7 +191,22 @@ func (f *Frontend) parse() error {
 		case strings.HasPrefix(line, "reset "):
 			// 'reset' SP <ref> LF
 			// ('from' SP <commit-ish> LF)?
-			// TODO
+			c := CmdReset{
+				RefName: strings.TrimSuffix(strings.TrimPrefix(line, "reset "), "\n")
+			}
+			line, err = f.nextLine()
+			if err != nil {
+				return err
+			}
+			if strings.HasPrefix(line, "from ") {
+				c.CommitIsh = strings.TrimSuffix(strings.TrimPrefix(line, "from "), "\n")
+				line, err = f.nextLine()
+				if err != nil {
+					return err
+				}
+			}
+			f.cmd <- c
+			continue
 		case strings.HasPrefix(line, "tag "):
 			// 'tag' SP <name> LF
 			// 'from' SP <commit-ish> LF
