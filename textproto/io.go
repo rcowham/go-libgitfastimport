@@ -131,6 +131,12 @@ type CatBlobWriter struct {
 	w io.Writer
 }
 
+func NewCatBlobWriter(w io.Writer) *CatBlobWriter {
+	return &CatBlobWriter {
+		w: w,
+	}
+}
+
 func (cbw *CatBlobWriter) WriteLine(a ...interface{}) error {
 	_, err := fmt.Fprintln(cbw.w, a...)
 	return err
