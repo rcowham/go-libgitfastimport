@@ -9,13 +9,13 @@ import (
 
 // BUG(lukeshu): Only supports the "raw" date format (not "rfc2822" or
 // "now")
-type UserTime struct {
+type Ident struct {
 	Name  string
 	Email string
 	Time  time.Time
 }
 
-func (ut UserTime) String() string {
+func (ut Ident) String() string {
 	if ut.Name == "" {
 		return fmt.Sprintf("<%s> %d %s",
 			ut.Name,
@@ -31,8 +31,8 @@ func (ut UserTime) String() string {
 	}
 }
 
-func ParseUserTime(str string) (UserTime, error) {
-	ret := UserTime{}
+func ParseIdent(str string) (Ident, error) {
+	ret := Ident{}
 	lt := strings.IndexAny(str, "<>")
 	if lt < 0 || str[lt] != '<' {
 		return ret, fmt.Errorf("Missing < in ident string: %v", str)

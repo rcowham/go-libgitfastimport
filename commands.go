@@ -13,8 +13,8 @@ type Cmd interface {
 type CmdCommit struct {
 	Ref       string
 	Mark      int // optional; < 1 for non-use
-	Author    *textproto.UserTime
-	Committer textproto.UserTime
+	Author    *textproto.Ident
+	Committer textproto.Ident
 	Msg       string
 	From      string
 	Merge     []string
@@ -57,7 +57,7 @@ func (c CmdCommit) fiWriteCmd(fiw *textproto.FIWriter) error {
 type CmdTag struct {
 	RefName   string
 	CommitIsh string
-	Tagger    textproto.UserTime
+	Tagger    textproto.Ident
 	Data      string
 }
 

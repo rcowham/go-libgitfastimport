@@ -233,7 +233,7 @@ func (f *Frontend) parse() error {
 			if !strings.HasPrefix(line, "tagger ") {
 				return fmt.Errorf("tag: expected tagger command: %v", line)
 			}
-			c.Tagger, err = textproto.ParseUserTime(trimLinePrefix(line, "tagger "))
+			c.Tagger, err = textproto.ParseIdent(trimLinePrefix(line, "tagger "))
 			if err != nil {
 				return err
 			}
