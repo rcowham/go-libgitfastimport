@@ -21,7 +21,7 @@ func (o FileModify) fiWriteFA(fiw *textproto.FIWriter) error {
 type FileModifyInline struct {
 	Mode textproto.Mode
 	Path textproto.Path
-	Data []byte
+	Data string
 }
 
 func (o FileModifyInline) fiWriteFA(fiw *textproto.FIWriter) error {
@@ -74,7 +74,7 @@ func (o NoteModify) fiWriteFA(fiw *textproto.FIWriter) error {
 
 type NoteModifyInline struct {
 	CommitIsh string
-	Data      []byte
+	Data      string
 }
 
 func (o NoteModifyInline) fiWriteFA(fiw *textproto.FIWriter) error {

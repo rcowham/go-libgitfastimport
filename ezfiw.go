@@ -17,7 +17,7 @@ func (e *ezfiw) WriteLine(a ...interface{}) {
 	}
 }
 
-func (e *ezfiw) WriteData(data []byte) {
+func (e *ezfiw) WriteData(data string) {
 	if e.err == nil {
 		e.err = e.fiw.WriteData(data)
 	}

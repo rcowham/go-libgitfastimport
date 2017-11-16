@@ -15,7 +15,7 @@ type CmdCommit struct {
 	Mark      int // optional; < 1 for non-use
 	Author    *textproto.UserTime
 	Committer textproto.UserTime
-	Msg       []byte
+	Msg       string
 	From      string
 	Merge     []string
 	Tree      []FileAction
@@ -58,7 +58,7 @@ type CmdTag struct {
 	RefName   string
 	CommitIsh string
 	Tagger    textproto.UserTime
-	Data      []byte
+	Data      string
 }
 
 func (c CmdTag) fiWriteCmd(fiw *textproto.FIWriter) error {
@@ -90,7 +90,7 @@ func (c CmdReset) fiWriteCmd(fiw *textproto.FIWriter) error {
 
 type CmdBlob struct {
 	Mark int
-	Data []byte
+	Data string
 }
 
 func (c CmdBlob) fiWriteCmd(fiw *textproto.FIWriter) error {

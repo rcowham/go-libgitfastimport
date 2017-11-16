@@ -70,12 +70,12 @@ func (fiw *FIWriter) WriteLine(a ...interface{}) error {
 	return err
 }
 
-func (fiw *FIWriter) WriteData(data []byte) error {
+func (fiw *FIWriter) WriteData(data string) error {
 	err := fiw.WriteLine("data", len(data))
 	if err != nil {
 		return err
 	}
-	_, err = fiw.w.Write(data)
+	_, err = io.WriteString(fiw.w, data)
 	return err
 }
 
