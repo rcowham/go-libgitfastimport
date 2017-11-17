@@ -14,6 +14,7 @@ type Backend struct {
 	fiw *textproto.FIWriter
 	cbr *textproto.CatBlobReader
 
+	err error
 	onErr func(error) error
 }
 
@@ -24,11 +25,21 @@ func NewBackend(fastImport io.Writer, catBlob io.Reader, onErr func(error) error
 	if catBlob != nil {
 		ret.cbr = textproto.NewCatBlobReader(catBlob)
 	}
-	ret.onErr = onErr
+	ret.onErr = func(err error) error {
+		ret.err = err
+		if onErr != nil {
+			ret.err = onErr(ret.err)
+		}
+		return ret.err
+	}
 	return ret
 }
 
 func (b *Backend) Do(cmd Cmd) error {
+	if b.err == nil {
+		return b.err
+	}
+
 	err := cmd.fiWriteCmd(b.fiw)
 	if err != nil {
 		return b.onErr(err)
@@ -37,6 +48,7 @@ func (b *Backend) Do(cmd Cmd) error {
 	if err != nil {
 		return b.onErr(err)
 	}
+
 	return nil
 }
 
