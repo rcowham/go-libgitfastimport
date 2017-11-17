@@ -38,7 +38,7 @@ type Frontend struct {
 	err error
 }
 
-func NewFrontend(fastImport io.Reader, catBlob io.Writer) *Frontend {
+func NewFrontend(fastImport io.Reader, catBlob io.Writer, onErr func(error) error) *Frontend {
 	ret := &Frontend{}
 	ret.fir = textproto.NewFIReader(fastImport)
 	if catBlob == nil {
@@ -49,6 +49,9 @@ func NewFrontend(fastImport io.Reader, catBlob io.Writer) *Frontend {
 	ret.cmd = make(chan Cmd)
 	go func() {
 		ret.err = ret.parse()
+		if onErr != nil {
+			ret.err = onErr(ret.err)
+		}
 		close(ret.cmd)
 	}()
 	return ret

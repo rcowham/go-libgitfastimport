@@ -13,58 +13,80 @@ type Backend struct {
 	w   *bufio.Writer
 	fiw *textproto.FIWriter
 	cbr *textproto.CatBlobReader
+
+	onErr func(error) error
 }
 
-func NewBackend(fastImport io.Writer, catBlob io.Reader) *Backend {
-	ret := Backend{}
+func NewBackend(fastImport io.Writer, catBlob io.Reader, onErr func(error) error) *Backend {
+	ret := &Backend{}
 	ret.w = bufio.NewWriter(fastImport)
 	ret.fiw = textproto.NewFIWriter(ret.w)
 	if catBlob != nil {
 		ret.cbr = textproto.NewCatBlobReader(catBlob)
 	}
-	return &ret
+	ret.onErr = onErr
+	return ret
 }
 
 func (b *Backend) Do(cmd Cmd) error {
 	err := cmd.fiWriteCmd(b.fiw)
 	if err != nil {
-		return err
+		return b.onErr(err)
 	}
-	return b.w.Flush()
+	err = b.w.Flush()
+	if err != nil {
+		return b.onErr(err)
+	}
+	return nil
 }
 
-func (b *Backend) GetMark(cmd CmdGetMark) (string, error) {
-	err := b.Do(cmd)
+func (b *Backend) GetMark(cmd CmdGetMark) (sha1 string, err error) {
+	err = b.Do(cmd)
 	if err != nil {
-		return "", err
+		return
 	}
 	line, err := b.cbr.ReadLine()
 	if err != nil {
-		return "", err
+		err = b.onErr(err)
+		return
 	}
-	return cbpGetMark(line)
+	sha1, err = cbpGetMark(line)
+	if err != nil {
+		err = b.onErr(err)
+	}
+	return
 }
 
 func (b *Backend) CatBlob(cmd CmdCatBlob) (sha1 string, data string, err error) {
 	err = b.Do(cmd)
 	if err != nil {
-		return "", "", err
+		return
 	}
 	line, err := b.cbr.ReadLine()
 	if err != nil {
-		return "", "", err
+		err = b.onErr(err)
+		return
 	}
-	return cbpCatBlob(line)
+	sha1, data, err = cbpCatBlob(line)
+	if err != nil {
+		err = b.onErr(err)
+	}
+	return
 }
 
 func (b *Backend) Ls(cmd CmdLs) (mode textproto.Mode, dataref string, path textproto.Path, err error) {
 	err = b.Do(cmd)
 	if err != nil {
-		return 0, "", "", err
+		return
 	}
 	line, err := b.cbr.ReadLine()
 	if err != nil {
-		return 0, "", "", err
+		err = b.onErr(err)
+		return
 	}
-	return cbpLs(line)
+	mode, dataref, path, err = cbpLs(line)
+	if err != nil {
+		err = b.onErr(err)
+	}
+	return
 }
