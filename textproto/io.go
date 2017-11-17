@@ -138,11 +138,11 @@ func (cbw *CatBlobWriter) WriteLine(a ...interface{}) error {
 	return err
 }
 
-func (cbw *CatBlobWriter) WriteBlob(sha1 string, data []byte) error {
+func (cbw *CatBlobWriter) WriteBlob(sha1 string, data string) error {
 	err := cbw.WriteLine(sha1, "blob", len(data))
 	if err != nil {
 		return err
 	}
-	_, err = cbw.w.Write(data)
+	_, err = io.WriteString(cbw.w, data)
 	return err
 }

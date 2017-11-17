@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 
@@ -40,10 +41,11 @@ type Frontend struct {
 func NewFrontend(fastImport io.Reader, catBlob io.Writer) *Frontend {
 	ret := &Frontend{}
 	ret.fir = textproto.NewFIReader(fastImport)
-	if catBlob != nil {
-		ret.w = bufio.NewWriter(catBlob)
-		ret.cbw = textproto.NewCatBlobWriter(ret.w)
+	if catBlob == nil {
+		catBlob = os.Stdout
 	}
+	ret.w = bufio.NewWriter(catBlob)
+	ret.cbw = textproto.NewCatBlobWriter(ret.w)
 	ret.cmd = make(chan Cmd)
 	go func() {
 		ret.err = ret.parse()
@@ -258,11 +260,11 @@ func (f *Frontend) parse() error {
 				case strings.HasPrefix(line, "D "):
 					c.Tree = append(c.Tree, FileDelete{Path: textproto.PathUnescape(trimLinePrefix(line, "D "))})
 				case strings.HasPrefix(line, "C "):
-					panic("C not implemented")
-					// TODO
+					// BUG(lukeshu): TODO: commit C not implemented
+					panic("TODO: commit C not implemented")
 				case strings.HasPrefix(line, "R "):
-					panic("R not implemented")
-					// TODO
+					// BUG(lukeshu): TODO: commit R not implemented
+					panic("TODO: commit R not implemented")
 				case strings.HasPrefix(line, "N "):
 					str := trimLinePrefix(line, "N ")
 					sp := strings.IndexByte(str, ' ')
@@ -288,8 +290,8 @@ func (f *Frontend) parse() error {
 						c.Tree = append(c.Tree, NoteModify{CommitIsh: commitish, DataRef: ref})
 					}
 				case strings.HasPrefix(line, "ls "):
-					panic("ls not implemented")
-					// TODO
+					// BUG(lukeshu): TODO: in-commit ls not implemented
+					panic("TODO: in-commit ls not implemented")
 				case line == "deleteall\n":
 					c.Tree = append(c.Tree, FileDeleteAll{})
 				default:
@@ -407,16 +409,39 @@ func (f *Frontend) ReadCmd() (Cmd, error) {
 }
 
 func (f *Frontend) RespondGetMark(sha1 string) error {
-	// TODO
+	err := f.cbw.WriteLine(sha1)
+	if err != nil {
+		return err
+	}
 	return f.w.Flush()
 }
 
 func (f *Frontend) RespondCatBlob(sha1 string, data string) error {
-	// TODO
+	err := f.cbw.WriteBlob(sha1, data)
+	if err != nil {
+		return err
+	}
 	return f.w.Flush()
 }
 
 func (f *Frontend) RespondLs(mode textproto.Mode, dataref string, path textproto.Path) error {
-	// TODO
+	var err error
+	if mode == 0 {
+		err = f.cbw.WriteLine("missing", path)
+	} else {
+		var t string
+		switch mode {
+		case textproto.ModeDir:
+			t = "tree"
+		case textproto.ModeGit:
+			t = "commit"
+		default:
+			t = "blob"
+		}
+		err = f.cbw.WriteLine(mode, t, dataref+"\t"+textproto.PathEscape(path))
+	}
+	if err != nil {
+		return err
+	}
 	return f.w.Flush()
 }
