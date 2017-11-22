@@ -2,6 +2,7 @@ package libfastimport
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 
 	"git.lukeshu.com/go/libfastimport/textproto"
@@ -14,6 +15,8 @@ type Backend struct {
 	bw  *bufio.Writer
 	fiw *textproto.FIWriter
 	cbr *textproto.CatBlobReader
+
+	inCommit bool
 
 	err   error
 	onErr func(error) error
@@ -45,12 +48,27 @@ func NewBackend(fastImport io.WriteCloser, catBlob io.Reader, onErr func(error) 
 	return ret
 }
 
+// will panic if Cmd is a type that may only be used in a commit but
+// we aren't in a commit.
 func (b *Backend) Do(cmd Cmd) error {
 	if b.err == nil {
 		return b.err
 	}
 
-	err := cmd.fiWriteCmd(b.fiw)
+	switch cmd.fiCmdClass() {
+	case cmdClassCommand:
+		_, b.inCommit = cmd.(CmdCommit)
+	case cmdClassCommit:
+		if !b.inCommit {
+			panic(fmt.Errorf("Cannot issue commit sub-command outside of a commit: %[1]T(%#[1]v)", cmd))
+		}
+	case cmdClassComment:
+		/* do nothing */
+	default:
+		panic(fmt.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
+	}
+
+	err := cmd.fiCmdWrite(b.fiw)
 	if err != nil {
 		return b.onErr(err)
 	}
@@ -59,7 +77,7 @@ func (b *Backend) Do(cmd Cmd) error {
 		return b.onErr(err)
 	}
 
-	if _, ok := cmd.(CmdDone); ok {
+	if _, isDone := cmd.(CmdDone); isDone {
 		return b.onErr(nil)
 	}
 

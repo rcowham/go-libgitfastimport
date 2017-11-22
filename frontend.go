@@ -17,22 +17,14 @@ func (e UnsupportedCommand) Error() string {
 	return "Unsupported command: " + string(e)
 }
 
-func trimLinePrefix(line string, prefix string) string {
-	if !strings.HasPrefix(line, prefix) {
-		panic("line didn't have prefix")
-	}
-	if !strings.HasSuffix(line, "\n") {
-		panic("line didn't have prefix")
-	}
-	return strings.TrimSuffix(strings.TrimPrefix(line, prefix), "\n")
-}
-
 // A Frontend is something that produces a fast-import stream; the
 // Frontend object provides methods for reading from it.
 type Frontend struct {
 	fir *textproto.FIReader
 	cbw *textproto.CatBlobWriter
 	w   *bufio.Writer
+
+	inCommit bool
 
 	cmd chan Cmd
 	err error
@@ -83,38 +75,6 @@ func (f *Frontend) nextLine() (line string, err error) {
 			return
 		}
 	}
-}
-
-func parse_data(line string) (data string, err error) {
-	nl := strings.IndexByte(line, '\n')
-	if nl < 0 {
-		return "", fmt.Errorf("data: expected newline: %v", data)
-	}
-	head := line[:nl+1]
-	rest := line[nl+1:]
-	if !strings.HasPrefix(head, "data ") {
-		return "", fmt.Errorf("data: could not parse: %v", data)
-	}
-	if strings.HasPrefix(head, "data <<") {
-		// Delimited format
-		delim := trimLinePrefix(head, "data <<")
-		suffix := "\n" + delim + "\n"
-		if !strings.HasSuffix(rest, suffix) {
-			return "", fmt.Errorf("data: did not find suffix: %v", suffix)
-		}
-		data = strings.TrimSuffix(rest, suffix)
-	} else {
-		// Exact byte count format
-		size, err := strconv.Atoi(trimLinePrefix(head, "data "))
-		if err != nil {
-			return "", err
-		}
-		if size != len(rest) {
-			panic("FIReader should not have let this happen")
-		}
-		data = rest
-	}
-	return
 }
 
 func (f *Frontend) parse() error {
@@ -229,84 +189,71 @@ func (f *Frontend) parse() error {
 					return err
 				}
 			}
-			for {
-				switch {
-				case strings.HasPrefix(line, "M "):
-					str := trimLinePrefix(line, "M ")
-					sp1 := strings.IndexByte(str, ' ')
-					sp2 := strings.IndexByte(str, ' ')
-					if sp1 < 0 || sp2 < 0 {
-						return fmt.Errorf("commit: malformed modify command: %v", line)
-					}
-					nMode, err := strconv.ParseUint(str[:sp1], 8, 18)
-					if err != nil {
-						return err
-					}
-					ref := str[sp1+1 : sp2]
-					path := textproto.PathUnescape(str[sp2+1:])
-					if ref == "inline" {
-						line, err = f.nextLine()
-						if err != nil {
-							return err
-						}
-						if !strings.HasPrefix(line, "data ") {
-							return fmt.Errorf("commit: modify: expected data command: %v", line)
-						}
-						data, err := parse_data(line)
-						if err != nil {
-							return err
-						}
-						c.Tree = append(c.Tree, FileModifyInline{Mode: textproto.Mode(nMode), Path: path, Data: data})
-					} else {
-						c.Tree = append(c.Tree, FileModify{Mode: textproto.Mode(nMode), Path: path, DataRef: ref})
-					}
-				case strings.HasPrefix(line, "D "):
-					c.Tree = append(c.Tree, FileDelete{Path: textproto.PathUnescape(trimLinePrefix(line, "D "))})
-				case strings.HasPrefix(line, "C "):
-					// BUG(lukeshu): TODO: commit C not implemented
-					panic("TODO: commit C not implemented")
-				case strings.HasPrefix(line, "R "):
-					// BUG(lukeshu): TODO: commit R not implemented
-					panic("TODO: commit R not implemented")
-				case strings.HasPrefix(line, "N "):
-					str := trimLinePrefix(line, "N ")
-					sp := strings.IndexByte(str, ' ')
-					if sp < 0 {
-						return fmt.Errorf("commit: malformed notemodify command: %v", line)
-					}
-					ref := str[:sp]
-					commitish := str[sp+1:]
-					if ref == "inline" {
-						line, err = f.nextLine()
-						if err != nil {
-							return err
-						}
-						if !strings.HasPrefix(line, "data ") {
-							return fmt.Errorf("commit: notemodify: expected data command: %v", line)
-						}
-						data, err := parse_data(line)
-						if err != nil {
-							return err
-						}
-						c.Tree = append(c.Tree, NoteModifyInline{CommitIsh: commitish, Data: data})
-					} else {
-						c.Tree = append(c.Tree, NoteModify{CommitIsh: commitish, DataRef: ref})
-					}
-				case strings.HasPrefix(line, "ls "):
-					// BUG(lukeshu): TODO: in-commit ls not implemented
-					panic("TODO: in-commit ls not implemented")
-				case line == "deleteall\n":
-					c.Tree = append(c.Tree, FileDeleteAll{})
-				default:
-					break
-				}
+			f.cmd <- c
+		case strings.HasPrefix(line, "M "):
+			fmt.Printf("line: %q\n", line)
+			str := trimLinePrefix(line, "M ")
+			sp1 := strings.IndexByte(str, ' ')
+			sp2 := strings.IndexByte(str[sp1+1:], ' ')
+			if sp1 < 0 || sp2 < 0 {
+				return fmt.Errorf("commit: malformed modify command: %v", line)
+			}
+			nMode, err := strconv.ParseUint(str[:sp1], 8, 18)
+			if err != nil {
+				return err
+			}
+			ref := str[sp1+1 : sp2]
+			path := textproto.PathUnescape(str[sp2+1:])
+			if ref == "inline" {
 				line, err = f.nextLine()
 				if err != nil {
 					return err
 				}
+				if !strings.HasPrefix(line, "data ") {
+					return fmt.Errorf("commit: modify: expected data command: %v", line)
+				}
+				data, err := parse_data(line)
+				if err != nil {
+					return err
+				}
+				f.cmd <- FileModifyInline{Mode: textproto.Mode(nMode), Path: path, Data: data}
+			} else {
+				f.cmd <- FileModify{Mode: textproto.Mode(nMode), Path: path, DataRef: ref}
 			}
-			f.cmd <- c
-			continue
+		case strings.HasPrefix(line, "D "):
+			f.cmd <- FileDelete{Path: textproto.PathUnescape(trimLinePrefix(line, "D "))}
+		case strings.HasPrefix(line, "C "):
+			// BUG(lukeshu): TODO: commit C not implemented
+			panic("TODO: commit C not implemented")
+		case strings.HasPrefix(line, "R "):
+			// BUG(lukeshu): TODO: commit R not implemented
+			panic("TODO: commit R not implemented")
+		case strings.HasPrefix(line, "N "):
+			str := trimLinePrefix(line, "N ")
+			sp := strings.IndexByte(str, ' ')
+			if sp < 0 {
+				return fmt.Errorf("commit: malformed notemodify command: %v", line)
+			}
+			ref := str[:sp]
+			commitish := str[sp+1:]
+			if ref == "inline" {
+				line, err = f.nextLine()
+				if err != nil {
+					return err
+				}
+				if !strings.HasPrefix(line, "data ") {
+					return fmt.Errorf("commit: notemodify: expected data command: %v", line)
+				}
+				data, err := parse_data(line)
+				if err != nil {
+					return err
+				}
+				f.cmd <- NoteModifyInline{CommitIsh: commitish, Data: data}
+			} else {
+				f.cmd <- NoteModify{CommitIsh: commitish, DataRef: ref}
+			}
+		case line == "deleteall\n":
+			f.cmd <- FileDeleteAll{}
 		case strings.HasPrefix(line, "feature "):
 			// 'feature' SP <feature> ('=' <argument>)? LF
 			str := trimLinePrefix(line, "feature ")
@@ -323,16 +270,17 @@ func (f *Frontend) parse() error {
 			}
 		case strings.HasPrefix(line, "ls "):
 			// 'ls' SP <dataref> SP <path> LF
-			sp1 := strings.IndexByte(line, ' ')
-			sp2 := strings.IndexByte(line[sp1+1:], ' ')
-			lf := strings.IndexByte(line[sp2+1:], '\n')
-			if sp1 < 0 || sp2 < 0 || lf < 0 {
-				return fmt.Errorf("ls: outside of a commit both <dataref> and <path> are required: %v", line)
+			str := trimLinePrefix(line, "ls ")
+			sp := -1
+			if !strings.HasPrefix(str, "\"") {
+				sp = strings.IndexByte(line, ' ')
 			}
-			f.cmd <- CmdLs{
-				DataRef: line[sp1+1 : sp2],
-				Path:    textproto.PathUnescape(line[sp2+1 : lf]),
+			c := CmdLs{}
+			c.Path = textproto.PathUnescape(str[sp+1:])
+			if sp >= 0 {
+				c.DataRef = str[:sp]
 			}
+			f.cmd <- c
 		case strings.HasPrefix(line, "option "):
 			// 'option' SP <option> LF
 			f.cmd <- CmdOption{Option: trimLinePrefix(line, "option ")}
@@ -406,6 +354,19 @@ func (f *Frontend) parse() error {
 func (f *Frontend) ReadCmd() (Cmd, error) {
 	cmd, ok := <-f.cmd
 	if ok {
+		switch cmd.fiCmdClass() {
+		case cmdClassCommand:
+			_, f.inCommit = cmd.(CmdCommit)
+		case cmdClassCommit:
+			if !f.inCommit {
+				// BUG(lukeshu): idk what to do here
+				panic("oops")
+			}
+		case cmdClassComment:
+			/* do nothing */
+		default:
+			panic(fmt.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
+		}
 		return cmd, nil
 	}
 	return nil, f.err
