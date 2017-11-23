@@ -84,6 +84,10 @@ func (m Mode) String() string {
 	return fmt.Sprintf("%06o", m)
 }
 
+func (m Mode) GoString() string {
+	return fmt.Sprintf("%07o", m)
+}
+
 func PathEscape(path Path) string {
 	if strings.HasPrefix(string(path), "\"") || strings.ContainsRune(string(path), '\n') {
 		return "\"" + strings.Replace(strings.Replace(strings.Replace(string(path), "\\", "\\\\", -1), "\"", "\\\"", -1), "\n", "\\n", -1) + "\""
