@@ -10,6 +10,9 @@ import (
 
 type FIReader struct {
 	r *bufio.Reader
+
+	line *string
+	err  error
 }
 
 func NewFIReader(r io.Reader) *FIReader {

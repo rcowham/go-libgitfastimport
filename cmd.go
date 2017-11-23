@@ -4,6 +4,11 @@ import (
 	"git.lukeshu.com/go/libfastimport/textproto"
 )
 
+type fiReader interface {
+	PeekLine() (string, error)
+	ReadLine() (string, error)
+}
+
 type cmdClass int
 
 const (
@@ -14,6 +19,7 @@ const (
 )
 
 type Cmd interface {
+	fiCmdRead(fiReader) (Cmd, error)
 	fiCmdWrite(*textproto.FIWriter) error
 	fiCmdClass() cmdClass
 }
