@@ -74,19 +74,24 @@ func cbpLs(line string) (mode textproto.Mode, dataref string, path textproto.Pat
 	if line[len(line)-1] != '\n' {
 		return 0, "", "", fmt.Errorf("ls: missing trailing newline")
 	}
+	line = line[:len(line)-1]
+
 	if strings.HasPrefix(line, "missing ") {
-		strPath := line[8 : len(line)-1]
+		strPath := line[8:]
 		return 0, "", textproto.PathUnescape(strPath), nil
 	} else {
-		sp1 := strings.IndexByte(line, ' ')
-		sp2 := strings.IndexByte(line[sp1+1:], ' ')
-		ht := strings.IndexByte(line[sp2+1:], '\t')
-		if sp1 < 0 || sp2 < 0 || ht < 0 {
+		fields := strings.SplitN(line, " ", 3)
+		if len(fields) < 3 {
 			return 0, "", "", fmt.Errorf("ls: malformed line: %q", line)
 		}
-		strMode := line[:sp1]
-		strRef := line[sp2+1 : ht]
-		strPath := line[ht+1 : len(line)-1]
+		ht := strings.IndexByte(fields[2], '\t')
+		if ht < 0 {
+			return 0, "", "", fmt.Errorf("ls: malformed line: %q", line)
+		}
+		strMode := fields[0]
+		//strType := fields[1]
+		strRef := fields[2][:ht]
+		strPath := fields[2][ht+1:]
 
 		nMode, err := strconv.ParseUint(strMode, 8, 18)
 		if err != nil {

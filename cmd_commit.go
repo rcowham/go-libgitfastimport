@@ -28,17 +28,19 @@ func (FileModify) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 		return nil, err
 	}
 	str := trimLinePrefix(line, "M ")
-	sp1 := strings.IndexByte(str, ' ')
-	sp2 := strings.IndexByte(str[sp1+1:], ' ')
-	if sp1 < 0 || sp2 < 0 {
+	fields := strings.SplitN(str, " ", 3)
+	if len(fields) != 3 {
 		return nil, fmt.Errorf("commit: malformed modify command: %v", line)
 	}
-	nMode, err := strconv.ParseUint(str[:sp1], 8, 18)
+
+	nMode, err := strconv.ParseUint(fields[0], 8, 18)
 	if err != nil {
 		return nil, err
 	}
-	ref := str[sp1+1 : sp2]
-	path := textproto.PathUnescape(str[sp2+1:])
+
+	ref := fields[1]
+	path := textproto.PathUnescape(fields[2])
+
 	if ref == "inline" {
 		line, err = fir.ReadLine()
 		if err != nil {
@@ -170,8 +172,10 @@ func (NoteModify) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	if sp < 0 {
 		return nil, fmt.Errorf("commit: malformed notemodify command: %v", line)
 	}
+
 	ref := str[:sp]
 	commitish := str[sp+1:]
+
 	if ref == "inline" {
 		line, err = fir.ReadLine()
 		if err != nil {
