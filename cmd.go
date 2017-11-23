@@ -1,12 +1,13 @@
 package libfastimport
 
-import (
-	"git.lukeshu.com/go/libfastimport/textproto"
-)
-
 type fiReader interface {
 	PeekLine() (string, error)
 	ReadLine() (string, error)
+}
+
+type fiWriter interface {
+	WriteData(string) error
+	WriteLine(a ...interface{}) error
 }
 
 type cmdClass int
@@ -20,6 +21,6 @@ const (
 
 type Cmd interface {
 	fiCmdRead(fiReader) (Cmd, error)
-	fiCmdWrite(*textproto.FIWriter) error
+	fiCmdWrite(fiWriter) error
 	fiCmdClass() cmdClass
 }

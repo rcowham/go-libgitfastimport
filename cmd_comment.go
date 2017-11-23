@@ -15,7 +15,7 @@ type CmdComment struct {
 }
 
 func (c CmdComment) fiCmdClass() cmdClass { return cmdClassComment }
-func (c CmdComment) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdComment) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("#" + c.Comment)
 }
 func init() { parser_registerCmd("#", CmdComment{}) }
@@ -34,7 +34,7 @@ type CmdGetMark struct {
 }
 
 func (c CmdGetMark) fiCmdClass() cmdClass { return cmdClassComment }
-func (c CmdGetMark) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdGetMark) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("get-mark", ":"+strconv.Itoa(c.Mark))
 }
 func init() { parser_registerCmd("get-mark :", CmdGetMark{}) }
@@ -58,7 +58,7 @@ type CmdCatBlob struct {
 }
 
 func (c CmdCatBlob) fiCmdClass() cmdClass { return cmdClassComment }
-func (c CmdCatBlob) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdCatBlob) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("cat-blob", c.DataRef)
 }
 func init() { parser_registerCmd("cat-blob ", CmdCatBlob{}) }
@@ -91,7 +91,7 @@ func (c CmdLs) fiCmdClass() cmdClass {
 	}
 	return cmdClassComment
 }
-func (c CmdLs) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdLs) fiCmdWrite(fiw fiWriter) error {
 	if c.DataRef == "" {
 		return fiw.WriteLine("ls", c.Path)
 	} else {

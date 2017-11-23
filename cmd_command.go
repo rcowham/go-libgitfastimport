@@ -21,7 +21,7 @@ type CmdCommit struct {
 }
 
 func (c CmdCommit) fiCmdClass() cmdClass { return cmdClassCommand }
-func (c CmdCommit) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdCommit) fiCmdWrite(fiw fiWriter) error {
 	ez := &ezfiw{fiw: fiw}
 
 	ez.WriteLine("commit", c.Ref)
@@ -90,9 +90,9 @@ func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 type CmdCommitEnd struct{}
 
-func (CmdCommitEnd) fiCmdClass() cmdClass                     { return cmdClassCommit }
-func (CmdCommitEnd) fiCmdWrite(fiw *textproto.FIWriter) error { return nil }
-func (CmdCommitEnd) fiCmdRead(fir fiReader) (Cmd, error)      { panic("not reached") }
+func (CmdCommitEnd) fiCmdClass() cmdClass                { return cmdClassCommit }
+func (CmdCommitEnd) fiCmdWrite(fiw fiWriter) error       { return nil }
+func (CmdCommitEnd) fiCmdRead(fir fiReader) (Cmd, error) { panic("not reached") }
 
 // tag /////////////////////////////////////////////////////////////////////////
 
@@ -104,7 +104,7 @@ type CmdTag struct {
 }
 
 func (c CmdTag) fiCmdClass() cmdClass { return cmdClassCommand }
-func (c CmdTag) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdTag) fiCmdWrite(fiw fiWriter) error {
 	ez := &ezfiw{fiw: fiw}
 
 	ez.WriteLine("tag", c.RefName)
@@ -151,7 +151,7 @@ type CmdReset struct {
 }
 
 func (c CmdReset) fiCmdClass() cmdClass { return cmdClassCommand }
-func (c CmdReset) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdReset) fiCmdWrite(fiw fiWriter) error {
 	ez := &ezfiw{fiw: fiw}
 
 	ez.WriteLine("reset", c.RefName)
@@ -186,7 +186,7 @@ type CmdBlob struct {
 }
 
 func (c CmdBlob) fiCmdClass() cmdClass { return cmdClassCommand }
-func (c CmdBlob) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdBlob) fiCmdWrite(fiw fiWriter) error {
 	ez := &ezfiw{fiw: fiw}
 
 	ez.WriteLine("blob")
@@ -224,7 +224,7 @@ func (CmdBlob) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 type CmdCheckpoint struct{}
 
 func (c CmdCheckpoint) fiCmdClass() cmdClass { return cmdClassCommand }
-func (c CmdCheckpoint) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdCheckpoint) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("checkpoint")
 }
 func init() { parser_registerCmd("checkpoint\n", CmdCheckpoint{}) }
@@ -243,7 +243,7 @@ type CmdProgress struct {
 }
 
 func (c CmdProgress) fiCmdClass() cmdClass { return cmdClassCommand }
-func (c CmdProgress) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdProgress) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("progress", c.Str)
 }
 func init() { parser_registerCmd("progress ", CmdProgress{}) }
@@ -263,7 +263,7 @@ type CmdFeature struct {
 }
 
 func (c CmdFeature) fiCmdClass() cmdClass { return cmdClassCommand }
-func (c CmdFeature) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdFeature) fiCmdWrite(fiw fiWriter) error {
 	if c.Argument != "" {
 		return fiw.WriteLine("feature", c.Feature+"="+c.Argument)
 	} else {
@@ -296,7 +296,7 @@ type CmdOption struct {
 }
 
 func (c CmdOption) fiCmdClass() cmdClass { return cmdClassCommand }
-func (c CmdOption) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdOption) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("option", c.Option)
 }
 func init() { parser_registerCmd("option ", CmdOption{}) }
@@ -314,7 +314,7 @@ func (CmdOption) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 type CmdDone struct{}
 
 func (c CmdDone) fiCmdClass() cmdClass { return cmdClassCommand }
-func (c CmdDone) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (c CmdDone) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("done")
 }
 func init() { parser_registerCmd("done\n", CmdDone{}) }

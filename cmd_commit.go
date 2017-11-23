@@ -17,7 +17,7 @@ type FileModify struct {
 }
 
 func (o FileModify) fiCmdClass() cmdClass { return cmdClassCommit }
-func (o FileModify) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (o FileModify) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("M", o.Mode, o.DataRef, o.Path)
 }
 func init() { parser_registerCmd("M ", FileModify{}) }
@@ -69,7 +69,7 @@ type FileModifyInline struct {
 }
 
 func (o FileModifyInline) fiCmdClass() cmdClass { return cmdClassCommit }
-func (o FileModifyInline) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (o FileModifyInline) fiCmdWrite(fiw fiWriter) error {
 	ez := &ezfiw{fiw: fiw}
 	ez.WriteLine("M", o.Mode, "inline", o.Path)
 	ez.WriteData(o.Data)
@@ -84,7 +84,7 @@ type FileDelete struct {
 }
 
 func (o FileDelete) fiCmdClass() cmdClass { return cmdClassCommit }
-func (o FileDelete) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (o FileDelete) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("D", o.Path)
 }
 func init() { parser_registerCmd("D ", FileDelete{}) }
@@ -104,7 +104,7 @@ type FileCopy struct {
 }
 
 func (o FileCopy) fiCmdClass() cmdClass { return cmdClassCommit }
-func (o FileCopy) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (o FileCopy) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("C", o.Src, o.Dst)
 }
 func init() { parser_registerCmd("C ", FileDelete{}) }
@@ -121,7 +121,7 @@ type FileRename struct {
 }
 
 func (o FileRename) fiCmdClass() cmdClass { return cmdClassCommit }
-func (o FileRename) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (o FileRename) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("R", o.Src, o.Dst)
 }
 func init() { parser_registerCmd("R ", FileDelete{}) }
@@ -135,7 +135,7 @@ func (FileRename) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 type FileDeleteAll struct{}
 
 func (o FileDeleteAll) fiCmdClass() cmdClass { return cmdClassCommit }
-func (o FileDeleteAll) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (o FileDeleteAll) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("deleteall")
 }
 func init() { parser_registerCmd("deleteall\n", FileDeleteAll{}) }
@@ -155,7 +155,7 @@ type NoteModify struct {
 }
 
 func (o NoteModify) fiCmdClass() cmdClass { return cmdClassCommit }
-func (o NoteModify) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (o NoteModify) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("N", o.DataRef, o.CommitIsh)
 }
 func init() { parser_registerCmd("N ", NoteModify{}) }
@@ -199,7 +199,7 @@ type NoteModifyInline struct {
 }
 
 func (o NoteModifyInline) fiCmdClass() cmdClass { return cmdClassCommit }
-func (o NoteModifyInline) fiCmdWrite(fiw *textproto.FIWriter) error {
+func (o NoteModifyInline) fiCmdWrite(fiw fiWriter) error {
 	ez := &ezfiw{fiw: fiw}
 	ez.WriteLine("N", "inline", o.CommitIsh)
 	ez.WriteData(o.Data)
