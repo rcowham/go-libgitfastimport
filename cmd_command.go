@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"git.lukeshu.com/go/libfastimport/textproto"
 )
 
 // commit //////////////////////////////////////////////////////////////////////
@@ -13,8 +11,8 @@ import (
 type CmdCommit struct {
 	Ref       string
 	Mark      int // optional; < 1 for non-use
-	Author    *textproto.Ident
-	Committer textproto.Ident
+	Author    *Ident
+	Committer Ident
 	Msg       string
 	From      string
 	Merge     []string
@@ -58,7 +56,7 @@ func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 	// ('author' (SP <name>)? SP LT <email> GT SP <when> LF)?
 	if strings.HasPrefix(ez.PeekLine(), "author ") {
-		author, err := textproto.ParseIdent(trimLinePrefix(ez.ReadLine(), "author "))
+		author, err := ParseIdent(trimLinePrefix(ez.ReadLine(), "author "))
 		ez.Errcheck(err)
 		c.Author = &author
 	}
@@ -67,7 +65,7 @@ func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	if !strings.HasPrefix(ez.PeekLine(), "committer ") {
 		ez.Errcheck(fmt.Errorf("commit: expected committer command: %v", ez.ReadLine()))
 	}
-	c.Committer, err = textproto.ParseIdent(trimLinePrefix(ez.ReadLine(), "committer "))
+	c.Committer, err = ParseIdent(trimLinePrefix(ez.ReadLine(), "committer "))
 	ez.Errcheck(err)
 
 	// data
@@ -99,7 +97,7 @@ func (CmdCommitEnd) fiCmdRead(fir fiReader) (Cmd, error) { panic("not reached") 
 type CmdTag struct {
 	RefName   string
 	CommitIsh string
-	Tagger    textproto.Ident
+	Tagger    Ident
 	Data      string
 }
 
@@ -132,7 +130,7 @@ func (CmdTag) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	if !strings.HasPrefix(ez.PeekLine(), "tagger ") {
 		ez.Errcheck(fmt.Errorf("tag: expected tagger command: %v", ez.ReadLine()))
 	}
-	c.Tagger, err = textproto.ParseIdent(trimLinePrefix(ez.ReadLine(), "tagger "))
+	c.Tagger, err = ParseIdent(trimLinePrefix(ez.ReadLine(), "tagger "))
 	ez.Errcheck(err)
 
 	// data

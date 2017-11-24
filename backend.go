@@ -122,7 +122,7 @@ func (b *Backend) CatBlob(cmd CmdCatBlob) (sha1 string, data string, err error) 
 	return
 }
 
-func (b *Backend) Ls(cmd CmdLs) (mode textproto.Mode, dataref string, path textproto.Path, err error) {
+func (b *Backend) Ls(cmd CmdLs) (mode Mode, dataref string, path Path, err error) {
 	err = b.Do(cmd)
 	if err != nil {
 		return

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"git.lukeshu.com/go/libfastimport/textproto"
 )
 
 // comment /////////////////////////////////////////////////////////////////////
@@ -74,7 +72,7 @@ func (CmdCatBlob) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 type CmdLs struct {
 	DataRef string // optional if inside of a commit
-	Path    textproto.Path
+	Path    Path
 }
 
 // If you're thinking "but wait, parser_registerCmd will see CmdLs as
@@ -111,7 +109,7 @@ func (CmdLs) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 		sp = strings.IndexByte(line, ' ')
 	}
 	c := CmdLs{}
-	c.Path = textproto.PathUnescape(str[sp+1:])
+	c.Path = PathUnescape(str[sp+1:])
 	if sp >= 0 {
 		c.DataRef = str[:sp]
 	}

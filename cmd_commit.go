@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"git.lukeshu.com/go/libfastimport/textproto"
 )
 
 // M ///////////////////////////////////////////////////////////////////////////
 
 type FileModify struct {
-	Mode    textproto.Mode
-	Path    textproto.Path
+	Mode    Mode
+	Path    Path
 	DataRef string
 }
 
@@ -39,7 +37,7 @@ func (FileModify) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	}
 
 	ref := fields[1]
-	path := textproto.PathUnescape(fields[2])
+	path := PathUnescape(fields[2])
 
 	if ref == "inline" {
 		line, err = fir.ReadLine()
@@ -51,13 +49,13 @@ func (FileModify) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 			return nil, err
 		}
 		return FileModifyInline{
-			Mode: textproto.Mode(nMode),
+			Mode: Mode(nMode),
 			Path: path,
 			Data: data,
 		}, nil
 	} else {
 		return FileModify{
-			Mode:    textproto.Mode(nMode),
+			Mode:    Mode(nMode),
 			Path:    path,
 			DataRef: ref,
 		}, nil
@@ -65,8 +63,8 @@ func (FileModify) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 }
 
 type FileModifyInline struct {
-	Mode textproto.Mode
-	Path textproto.Path
+	Mode Mode
+	Path Path
 	Data string
 }
 
@@ -82,7 +80,7 @@ func (FileModifyInline) fiCmdRead(fiReader) (Cmd, error) { panic("not reached") 
 // D ///////////////////////////////////////////////////////////////////////////
 
 type FileDelete struct {
-	Path textproto.Path
+	Path Path
 }
 
 func (o FileDelete) fiCmdClass() cmdClass { return cmdClassCommit }
@@ -95,14 +93,14 @@ func (FileDelete) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return FileDelete{Path: textproto.PathUnescape(trimLinePrefix(line, "D "))}, nil
+	return FileDelete{Path: PathUnescape(trimLinePrefix(line, "D "))}, nil
 }
 
 // C ///////////////////////////////////////////////////////////////////////////
 
 type FileCopy struct {
-	Src textproto.Path
-	Dst textproto.Path
+	Src Path
+	Dst Path
 }
 
 func (o FileCopy) fiCmdClass() cmdClass { return cmdClassCommit }

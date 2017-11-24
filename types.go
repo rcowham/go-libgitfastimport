@@ -1,4 +1,4 @@
-package textproto
+package libfastimport
 
 import (
 	"fmt"

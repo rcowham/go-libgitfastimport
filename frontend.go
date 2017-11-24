@@ -67,21 +67,21 @@ func (f *Frontend) RespondCatBlob(sha1 string, data string) error {
 	return f.catBlobFlush.Flush()
 }
 
-func (f *Frontend) RespondLs(mode textproto.Mode, dataref string, path textproto.Path) error {
+func (f *Frontend) RespondLs(mode Mode, dataref string, path Path) error {
 	var err error
 	if mode == 0 {
 		err = f.catBlobWrite.WriteLine("missing", path)
 	} else {
 		var t string
 		switch mode {
-		case textproto.ModeDir:
+		case ModeDir:
 			t = "tree"
-		case textproto.ModeGit:
+		case ModeGit:
 			t = "commit"
 		default:
 			t = "blob"
 		}
-		err = f.catBlobWrite.WriteLine(mode, t, dataref+"\t"+textproto.PathEscape(path))
+		err = f.catBlobWrite.WriteLine(mode, t, dataref+"\t"+PathEscape(path))
 	}
 	if err != nil {
 		return err

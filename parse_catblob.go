@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"git.lukeshu.com/go/libfastimport/textproto"
 )
 
 func cbpGetMark(line string) (string, error) {
@@ -67,7 +65,7 @@ func cbpCatBlob(full string) (sha1 string, data string, err error) {
 	return sha1, data, err
 }
 
-func cbpLs(line string) (mode textproto.Mode, dataref string, path textproto.Path, err error) {
+func cbpLs(line string) (mode Mode, dataref string, path Path, err error) {
 	//     <mode> SP ('blob' | 'tree' | 'commit') SP <dataref> HT <path> LF
 	// or
 	//     'missing' SP <path> LF
@@ -78,7 +76,7 @@ func cbpLs(line string) (mode textproto.Mode, dataref string, path textproto.Pat
 
 	if strings.HasPrefix(line, "missing ") {
 		strPath := line[8:]
-		return 0, "", textproto.PathUnescape(strPath), nil
+		return 0, "", PathUnescape(strPath), nil
 	} else {
 		fields := strings.SplitN(line, " ", 3)
 		if len(fields) < 3 {
@@ -97,6 +95,6 @@ func cbpLs(line string) (mode textproto.Mode, dataref string, path textproto.Pat
 		if err != nil {
 			return 0, "", "", err
 		}
-		return textproto.Mode(nMode), strRef, textproto.PathUnescape(strPath), nil
+		return Mode(nMode), strRef, PathUnescape(strPath), nil
 	}
 }
