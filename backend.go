@@ -55,7 +55,7 @@ func NewBackend(fastImport io.WriteCloser, catBlob io.Reader, onErr func(error) 
 // will panic if Cmd is a type that may only be used in a commit but
 // we aren't in a commit.
 func (b *Backend) Do(cmd Cmd) error {
-	if b.err == nil {
+	if b.err != nil {
 		return b.err
 	}
 
