@@ -48,7 +48,7 @@ func (cbr *CatBlobReader) ReadLine() (line string, err error) {
 	}
 	data := make([]byte, size+1)
 	_, err = io.ReadFull(cbr.r, data)
-	line += string(data[:size])
+	line += string(data)
 	return
 }
 
