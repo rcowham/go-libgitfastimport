@@ -1,9 +1,10 @@
 package libfastimport
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // comment /////////////////////////////////////////////////////////////////////
@@ -44,7 +45,7 @@ func (CmdGetMark) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	c := CmdGetMark{}
 	c.Mark, err = strconv.Atoi(trimLinePrefix(line, "get-mark :"))
 	if err != nil {
-		return nil, fmt.Errorf("get-mark: %v", err)
+		return nil, errors.Wrap(err, "get-mark")
 	}
 	return c, nil
 }

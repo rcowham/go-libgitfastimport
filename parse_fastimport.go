@@ -1,10 +1,10 @@
 package libfastimport
 
 import (
-	"fmt"
 	"strings"
 
 	"git.lukeshu.com/go/libfastimport/textproto"
+	"github.com/pkg/errors"
 )
 
 var parser_regularCmds = make(map[string]Cmd)
@@ -17,7 +17,7 @@ func parser_registerCmd(prefix string, cmd Cmd) {
 	case cmdClassComment:
 		parser_commentCmds[prefix] = cmd
 	default:
-		panic(fmt.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
+		panic(errors.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
 	}
 }
 
@@ -121,12 +121,12 @@ func (p *parser) parse() error {
 			_, p.inCommit = cmd.(CmdCommit)
 		case cmdClassCommit:
 			if !p.inCommit {
-				return fmt.Errorf("Got in-commit-only command outside of a commit: %[1]T(%#[1]v)", cmd)
+				return errors.Errorf("Got in-commit-only command outside of a commit: %[1]T(%#[1]v)", cmd)
 			}
 		case cmdClassComment:
 			/* do nothing */
 		default:
-			panic(fmt.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
+			panic(errors.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
 		}
 
 		p.ret_cmd <- cmd

@@ -2,10 +2,10 @@ package libfastimport
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 
 	"git.lukeshu.com/go/libfastimport/textproto"
+	"github.com/pkg/errors"
 )
 
 // A Backend is something that consumes a fast-import stream; the
@@ -64,12 +64,12 @@ func (b *Backend) Do(cmd Cmd) error {
 		_, b.inCommit = cmd.(CmdCommit)
 	case cmdClassCommit:
 		if !b.inCommit {
-			panic(fmt.Errorf("Cannot issue commit sub-command outside of a commit: %[1]T(%#[1]v)", cmd))
+			panic(errors.Errorf("Cannot issue commit sub-command outside of a commit: %[1]T(%#[1]v)", cmd))
 		}
 	case cmdClassComment:
 		/* do nothing */
 	default:
-		panic(fmt.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
+		panic(errors.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
 	}
 
 	err := cmd.fiCmdWrite(b.fastImportWrite)

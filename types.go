@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // BUG(lukeshu): Only supports the "raw" date format (not "rfc2822" or
@@ -35,27 +37,27 @@ func ParseIdent(str string) (Ident, error) {
 	ret := Ident{}
 	lt := strings.IndexAny(str, "<>")
 	if lt < 0 || str[lt] != '<' {
-		return ret, fmt.Errorf("Missing < in ident string: %v", str)
+		return ret, errors.Errorf("Missing < in ident string: %v", str)
 	}
 	if lt > 0 {
 		if str[lt-1] != ' ' {
-			return ret, fmt.Errorf("Missing space before < in ident string: %v", str)
+			return ret, errors.Errorf("Missing space before < in ident string: %v", str)
 		}
 		ret.Name = str[:lt-1]
 	}
 	gt := lt + 1 + strings.IndexAny(str[lt+1:], "<>")
 	if gt < lt+1 || str[gt] != '>' {
-		return ret, fmt.Errorf("Missing > in ident string: %v", str)
+		return ret, errors.Errorf("Missing > in ident string: %v", str)
 	}
 	if str[gt+1] != ' ' {
-		return ret, fmt.Errorf("Missing space after > in ident string: %v", str)
+		return ret, errors.Errorf("Missing space after > in ident string: %v", str)
 	}
 	ret.Email = str[lt+1 : gt]
 
 	strWhen := str[gt+2:]
 	sp := strings.IndexByte(strWhen, ' ')
 	if sp < 0 {
-		return ret, fmt.Errorf("missing time zone in when: %v", str)
+		return ret, errors.Errorf("missing time zone in when: %v", str)
 	}
 	sec, err := strconv.ParseInt(strWhen[:sp], 10, 64)
 	if err != nil {

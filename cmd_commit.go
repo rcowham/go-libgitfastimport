@@ -1,9 +1,10 @@
 package libfastimport
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // M ///////////////////////////////////////////////////////////////////////////
@@ -28,7 +29,7 @@ func (FileModify) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	str := trimLinePrefix(line, "M ")
 	fields := strings.SplitN(str, " ", 3)
 	if len(fields) != 3 {
-		return nil, fmt.Errorf("commit: malformed modify command: %v", line)
+		return nil, errors.Errorf("commit: malformed modify command: %v", line)
 	}
 
 	nMode, err := strconv.ParseUint(fields[0], 8, 18)
@@ -168,7 +169,7 @@ func (NoteModify) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	str := trimLinePrefix(line, "N ")
 	sp := strings.IndexByte(str, ' ')
 	if sp < 0 {
-		return nil, fmt.Errorf("commit: malformed notemodify command: %v", line)
+		return nil, errors.Errorf("commit: malformed notemodify command: %v", line)
 	}
 
 	ref := str[:sp]

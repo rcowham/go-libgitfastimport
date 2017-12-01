@@ -1,9 +1,10 @@
 package libfastimport
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 func trimLinePrefix(line string, prefix string) string {
@@ -19,19 +20,19 @@ func trimLinePrefix(line string, prefix string) string {
 func parse_data(line string) (data string, err error) {
 	nl := strings.IndexByte(line, '\n')
 	if nl < 0 {
-		return "", fmt.Errorf("data: expected newline: %v", data)
+		return "", errors.Errorf("data: expected newline: %v", data)
 	}
 	head := line[:nl+1]
 	rest := line[nl+1:]
 	if !strings.HasPrefix(head, "data ") {
-		return "", fmt.Errorf("data: could not parse: %v", data)
+		return "", errors.Errorf("data: could not parse: %v", data)
 	}
 	if strings.HasPrefix(head, "data <<") {
 		// Delimited format
 		delim := trimLinePrefix(head, "data <<")
 		suffix := "\n" + delim + "\n"
 		if !strings.HasSuffix(rest, suffix) {
-			return "", fmt.Errorf("data: did not find suffix: %v", suffix)
+			return "", errors.Errorf("data: did not find suffix: %v", suffix)
 		}
 		data = strings.TrimSuffix(rest, suffix)
 	} else {

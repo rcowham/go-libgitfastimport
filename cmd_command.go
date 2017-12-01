@@ -1,9 +1,10 @@
 package libfastimport
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // commit //////////////////////////////////////////////////////////////////////
@@ -63,7 +64,7 @@ func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 	// 'committer' (SP <name>)? SP LT <email> GT SP <when> LF
 	if !strings.HasPrefix(ez.PeekLine(), "committer ") {
-		ez.Errcheck(fmt.Errorf("commit: expected committer command: %v", ez.ReadLine()))
+		ez.Errcheck(errors.Errorf("commit: expected committer command: %v", ez.ReadLine()))
 	}
 	c.Committer, err = ParseIdent(trimLinePrefix(ez.ReadLine(), "committer "))
 	ez.Errcheck(err)
@@ -122,13 +123,13 @@ func (CmdTag) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 	// 'from' SP <commit-ish> LF
 	if !strings.HasPrefix(ez.PeekLine(), "from ") {
-		ez.Errcheck(fmt.Errorf("tag: expected from command: %v", ez.ReadLine()))
+		ez.Errcheck(errors.Errorf("tag: expected from command: %v", ez.ReadLine()))
 	}
 	c.CommitIsh = trimLinePrefix(ez.ReadLine(), "from ")
 
 	// 'tagger' (SP <name>)? SP LT <email> GT SP <when> LF
 	if !strings.HasPrefix(ez.PeekLine(), "tagger ") {
-		ez.Errcheck(fmt.Errorf("tag: expected tagger command: %v", ez.ReadLine()))
+		ez.Errcheck(errors.Errorf("tag: expected tagger command: %v", ez.ReadLine()))
 	}
 	c.Tagger, err = ParseIdent(trimLinePrefix(ez.ReadLine(), "tagger "))
 	ez.Errcheck(err)
