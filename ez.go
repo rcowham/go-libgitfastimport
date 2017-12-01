@@ -2,6 +2,8 @@ package libfastimport
 
 import (
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 type ezfiw struct {
@@ -32,12 +34,18 @@ type ezfir struct {
 	err error
 }
 
+var ezPanic = errors.New("everything is fine")
+
 func (e *ezfir) Defer() error {
-	if r := recover(); r != nil {
-		if e.err != nil {
-			return e.err
+	if e.err != nil {
+		r := recover()
+		if r == nil {
+			panic("ezfir.err got set, but didn't panic")
 		}
-		panic(r)
+		if r != ezPanic {
+			panic(r)
+		}
+		return e.err
 	}
 	return nil
 }
@@ -47,7 +55,7 @@ func (e *ezfir) Errcheck(err error) {
 		return
 	}
 	e.err = err
-	panic("everything is fine")
+	panic(ezPanic)
 }
 
 func (e *ezfir) PeekLine() string {
