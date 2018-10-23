@@ -1,4 +1,4 @@
-// Copyright (C) 2017  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -22,8 +22,11 @@ import (
 	"time"
 )
 
-// BUG(lukeshu): Only supports the "raw" date format (not "rfc2822" or
-// "now")
+// Ident is a tuple of a commiter's (or author's) name, email, and a
+// timestamp with timezone.
+//
+// BUG(lukeshu): Ident (and ParseIdent) only supports the "raw" date
+// format (not "rfc2822" or "now")
 type Ident struct {
 	Name  string
 	Email string
@@ -46,6 +49,16 @@ func (ut Ident) String() string {
 	}
 }
 
+// ParseIdent parses a string containing an Ident.
+//
+// The format of this string is
+//
+//     <name> SP LT <email> GT SP <time> SP <offutc>
+//
+// Where <name> may contain a space, but not "<" or ">"; <time> is an
+// integer number of seconds since the UNIX epoch (UTC); <offutc> is
+// positive or negative 4-digit offset from UTC (for example, EST
+// would be "-0500").
 func ParseIdent(str string) (Ident, error) {
 	ret := Ident{}
 	lt := strings.IndexAny(str, "<>")
@@ -85,14 +98,15 @@ func ParseIdent(str string) (Ident, error) {
 	return ret, nil
 }
 
+// Mode is a file mode as seen by git.
 type Mode uint32 // 18 bits
 
 var (
-	ModeFil = Mode(0100644)
-	ModeExe = Mode(0100755)
-	ModeSym = Mode(0120000)
-	ModeGit = Mode(0160000)
-	ModeDir = Mode(0040000)
+	ModeFil = Mode(0100644) // A regular file
+	ModeExe = Mode(0100755) // An executable file
+	ModeSym = Mode(0120000) // A symbolic link
+	ModeGit = Mode(0160000) // A nested git repository (e.g. submodule)
+	ModeDir = Mode(0040000) // A directory
 )
 
 func (m Mode) String() string {
@@ -103,6 +117,10 @@ func (m Mode) GoString() string {
 	return fmt.Sprintf("%07o", m)
 }
 
+// Path is a string storing a git path.
+type Path string
+
+// PathEscape escapes a path in case it contains special characters.
 func PathEscape(path Path) string {
 	if strings.HasPrefix(string(path), "\"") || strings.ContainsRune(string(path), '\n') {
 		return "\"" + strings.Replace(strings.Replace(strings.Replace(string(path), "\\", "\\\\", -1), "\"", "\\\"", -1), "\n", "\\n", -1) + "\""
@@ -111,6 +129,7 @@ func PathEscape(path Path) string {
 	}
 }
 
+// PathUnescape unescapes a quoted path.
 func PathUnescape(epath string) Path {
 	if strings.HasPrefix(epath, "\"") {
 		return Path(strings.Replace(strings.Replace(strings.Replace(epath[1:len(epath)-1], "\\n", "\n", -1), "\\\"", "\"", -1), "\\\\", "\\", -1))
@@ -119,8 +138,7 @@ func PathUnescape(epath string) Path {
 	}
 }
 
-type Path string
-
+// String calls PathEscape on the Path.
 func (p Path) String() string {
 	return PathEscape(p)
 }
