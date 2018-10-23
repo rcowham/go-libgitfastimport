@@ -1,4 +1,4 @@
-// Copyright (C) 2017  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -24,7 +24,12 @@ import (
 )
 
 // A Backend is something that consumes a fast-import stream; the
-// Backend object provides methods for writing to it.
+// Backend object provides methods for writing to it.  A program that
+// reads from a Backend would itself be a frontend.
+//
+// You may think of a "Backend" object as a "Writer" object, though it was not
+// given that name because the GetMark, CatBlob, and Ls methods
+// actually provide 2-way communication.
 type Backend struct {
 	fastImportClose io.Closer
 	fastImportFlush *bufio.Writer
@@ -37,6 +42,14 @@ type Backend struct {
 	onErr func(error) error
 }
 
+// NewBackend creates a new Backend object that writes to the given
+// io.WriteCloser.
+//
+// Optionally, you may also provide an io.Reader that responses to
+// "cat-blob", "get-mark", and "ls" commands can be read from.
+//
+// Optionally, you may also provide an onErr function that can be used
+// to handle or transform errors when they are encountered.
 func NewBackend(fastImport io.WriteCloser, catBlob io.Reader, onErr func(error) error) *Backend {
 	ret := &Backend{}
 
@@ -67,8 +80,10 @@ func NewBackend(fastImport io.WriteCloser, catBlob io.Reader, onErr func(error) 
 	return ret
 }
 
-// will panic if Cmd is a type that may only be used in a commit but
-// we aren't in a commit.
+// Do tells the Backend to do the given command.
+//
+// It is an error (panic) if Cmd is a type that may only be used in a
+// commit but we aren't in a commit.
 func (b *Backend) Do(cmd Cmd) error {
 	if b.err == nil {
 		return b.err
@@ -103,6 +118,11 @@ func (b *Backend) Do(cmd Cmd) error {
 	return nil
 }
 
+// GetMark gets the SHA-1 referred to by the given mark from the
+// Backend.
+//
+// It is an error (panic) to call GetMark if NewBackend did not have a
+// cat-blob reader passed to it.
 func (b *Backend) GetMark(cmd CmdGetMark) (sha1 string, err error) {
 	err = b.Do(cmd)
 	if err != nil {
@@ -120,6 +140,11 @@ func (b *Backend) GetMark(cmd CmdGetMark) (sha1 string, err error) {
 	return
 }
 
+// CatBlob gets the SHA-1 and content of the specified blob from the
+// Backend.
+//
+// It is an error (panic) to call CatBlob if NewBackend did not have a
+// cat-blob reader passed to it.
 func (b *Backend) CatBlob(cmd CmdCatBlob) (sha1 string, data string, err error) {
 	err = b.Do(cmd)
 	if err != nil {
@@ -137,6 +162,11 @@ func (b *Backend) CatBlob(cmd CmdCatBlob) (sha1 string, data string, err error) 
 	return
 }
 
+// Ls gets information about the file at the specified path from the
+// Backend.
+//
+// It is an error (panic) to call Ls if NewBackend did not have a
+// cat-blob reader passed to it.
 func (b *Backend) Ls(cmd CmdLs) (mode textproto.Mode, dataref string, path textproto.Path, err error) {
 	err = b.Do(cmd)
 	if err != nil {

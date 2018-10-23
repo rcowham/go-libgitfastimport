@@ -1,4 +1,4 @@
-// Copyright (C) 2017  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -25,6 +25,13 @@ import (
 
 // M ///////////////////////////////////////////////////////////////////////////
 
+// FileModify appears after a CmdCommit (and before a CmdCommitEnd),
+// and causes the CmdCommit to add a new file or change the content of
+// an existing file.  The content of the file is specified by giving
+// either a mark reference (":<idnum>") or by a full 40-byte SHA-1.
+//
+// To specify the full content of the file inline, use
+// FileModifyInline instead.
 type FileModify struct {
 	Mode    textproto.Mode
 	Path    textproto.Path
@@ -79,6 +86,13 @@ func (FileModify) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	}
 }
 
+// FileModifyInline appears after a CmdCommit (and before a
+// CmdCommitEnd), and causes the CmdCommit to add a new file or change
+// the content of an existing file.  The full content of the file are
+// specified directly
+//
+// To instead specify the content with a mark reference (":<idnum>")
+// or with a full 40-byte SHA-1, use FileModify instead.
 type FileModifyInline struct {
 	Mode textproto.Mode
 	Path textproto.Path
@@ -96,6 +110,8 @@ func (FileModifyInline) fiCmdRead(fiReader) (Cmd, error) { panic("not reached") 
 
 // D ///////////////////////////////////////////////////////////////////////////
 
+// FileDelete appears after a CmdCommit (and before a CmdCommitEnd),
+// and causes the CmdCommit to recursively remove a file or directory.
 type FileDelete struct {
 	Path textproto.Path
 }
@@ -115,6 +131,9 @@ func (FileDelete) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // C ///////////////////////////////////////////////////////////////////////////
 
+// FileCopy appears after a CmdCommit (and before a CmdCommitEnd),
+// and causes the CmdCommit to recursively copy an existing file or
+// subdirectory to a different location.
 type FileCopy struct {
 	Src textproto.Path
 	Dst textproto.Path
@@ -132,6 +151,9 @@ func (FileCopy) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // R ///////////////////////////////////////////////////////////////////////////
 
+// FileRename appears after a CmdCommit (and before a CmdCommitEnd),
+// and causes the CmdCommit to rename an existing file or subdirectory
+// to a different location.
 type FileRename struct {
 	Src string
 	Dst string
@@ -149,6 +171,9 @@ func (FileRename) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // deleteall ///////////////////////////////////////////////////////////////////
 
+// FileDeleteAll appears after a CmdCommit (and before a
+// CmdCommitEnd), and removes all files and directories from the
+// CmdCommit.
 type FileDeleteAll struct{}
 
 func (o FileDeleteAll) fiCmdClass() cmdClass { return cmdClassCommit }
@@ -166,6 +191,14 @@ func (FileDeleteAll) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // N ///////////////////////////////////////////////////////////////////////////
 
+// NoteModify appears after a CmdCommit (and before a CmdCommitEnd),
+// and causes the CmdCommit to add a new note describing CommitIsh or
+// change the content of an existing note describing CommitIsh.  The
+// content of the note is specified by giving either a mark reference
+// (":<idnum>") or by a full 40-byte SHA-1.
+//
+// To specify the full content of the note inline, use
+// NoteModifyInline instead.
 type NoteModify struct {
 	CommitIsh string
 	DataRef   string
@@ -212,6 +245,14 @@ func (NoteModify) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	}
 }
 
+// NoteModifyInline appears after a CmdCommit (and before a
+// CmdCommitEnd), and causes the CmdCommit to add a new note
+// describing CommitIsh or change the content of an existing note
+// describing CommitIsh.  The full content of the note is specified
+// directly.
+//
+// To instead specify the content with a mark reference (":<idnum>")
+// or with a full 40-byte SHA-1, use NoteModify instead.
 type NoteModifyInline struct {
 	CommitIsh string
 	Data      string

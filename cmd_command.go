@@ -1,4 +1,4 @@
-// Copyright (C) 2017  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -25,6 +25,14 @@ import (
 
 // commit //////////////////////////////////////////////////////////////////////
 
+// CmdCommit requests that the Backend creates or updates a branch
+// with a new commit.
+//
+// This command may be followed by zero or more "File" or "Note"
+// commands to set the content of commit's tree.  When reading from a
+// Frontend, that sequence of "File" and "Note" commands will be
+// terminated by a CmdCommitEnd command.  It is not nescessary to
+// manually emit a CmdCommitEnd when writing to a Backend.
 type CmdCommit struct {
 	Ref       string
 	Mark      int // optional; < 1 for non-use
@@ -103,6 +111,13 @@ func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	return
 }
 
+// CmdCommitEnd indicates the Frontend will be sending no more "File"
+// or "Note" commands that are "part of" the current CmdCommit.
+//
+// This is a synthesized command to simplify reading from a Frontend;
+// it is not really a command in the stream.  It is thus not
+// nescessary to send a CmdCommitEnd command when writing to a
+// Backend.
 type CmdCommitEnd struct{}
 
 func (CmdCommitEnd) fiCmdClass() cmdClass                { return cmdClassCommit }
@@ -111,6 +126,10 @@ func (CmdCommitEnd) fiCmdRead(fir fiReader) (Cmd, error) { panic("not reached") 
 
 // tag /////////////////////////////////////////////////////////////////////////
 
+// CmdTag requests that the Backend creates an *annotated* tag
+// referencing a specific commit.
+//
+// Hint: Use CmdReset to create a *lightweight* tag.
 type CmdTag struct {
 	RefName   string
 	CommitIsh string
@@ -160,6 +179,9 @@ func (CmdTag) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // reset ///////////////////////////////////////////////////////////////////////
 
+// CmdReset requests that the Backend creates (or recreates) the named
+// ref (usually a branch), optionally starting from a specific
+// revision.
 type CmdReset struct {
 	RefName   string
 	CommitIsh string // optional
@@ -195,8 +217,12 @@ func (CmdReset) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // blob ////////////////////////////////////////////////////////////////////////
 
+// CmdBlob requests that the Backend write file revision.  The blob
+// can be later referred to by the specified Mark (if a Mark > 0 is
+// given), or by pre-calculating the Git SHA-1 (though this is
+// needlessly difficult, just specify a Mark).
 type CmdBlob struct {
-	Mark int
+	Mark int // optional
 	Data string
 }
 
@@ -236,6 +262,7 @@ func (CmdBlob) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // checkpoint //////////////////////////////////////////////////////////////////
 
+// CmdCheckpoint requests that the Backend flush already-sent data.
 type CmdCheckpoint struct{}
 
 func (c CmdCheckpoint) fiCmdClass() cmdClass { return cmdClassCommand }
@@ -253,6 +280,8 @@ func (CmdCheckpoint) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // progress ////////////////////////////////////////////////////////////////////
 
+// CmdProgress requests that the Backend print the given string to its
+// standard output channel.
 type CmdProgress struct {
 	Str string
 }
@@ -272,6 +301,8 @@ func (CmdProgress) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // feature /////////////////////////////////////////////////////////////////////
 
+// CmdFeature requests that the Backend immediately aborts with an
+// error if it does not support the specified feature.
 type CmdFeature struct {
 	Feature  string
 	Argument string
@@ -306,6 +337,7 @@ func (CmdFeature) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // option //////////////////////////////////////////////////////////////////////
 
+// CmdOption requests that the Backend changes its settings.
 type CmdOption struct {
 	Option string
 }
@@ -326,6 +358,8 @@ func (CmdOption) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // done ////////////////////////////////////////////////////////////////////////
 
+// CmdDone indicates to the Backend that no more commands will be
+// sent.
 type CmdDone struct{}
 
 func (c CmdDone) fiCmdClass() cmdClass { return cmdClassCommand }
