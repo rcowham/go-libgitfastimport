@@ -101,7 +101,7 @@ func ParseIdent(str string) (Ident, error) {
 // Mode is a file mode as seen by git.
 type Mode uint32 // 18 bits
 
-var (
+const (
 	ModeFil = Mode(0100644) // A regular file
 	ModeExe = Mode(0100755) // An executable file
 	ModeSym = Mode(0120000) // A symbolic link
