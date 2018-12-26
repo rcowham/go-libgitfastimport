@@ -1,3 +1,18 @@
+// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 package libfastimport
 
 import (
@@ -26,7 +41,8 @@ var parser_comment func(line string) func(fiReader) (Cmd, error)
 
 func parser_compile(cmds map[string]Cmd) func(line string) func(fiReader) (Cmd, error) {
 	// This assumes that 2 characters is enough to uniquely
-	// identify a command, and that "#" is the only one-chara
+	// identify a command, and that "#" is the only one-character
+	// command.
 	ch2map := make(map[string]string, len(cmds))
 	for prefix := range cmds {
 		var ch2 string

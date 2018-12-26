@@ -1,3 +1,18 @@
+// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 package libfastimport
 
 import (
@@ -9,6 +24,7 @@ import (
 
 // comment /////////////////////////////////////////////////////////////////////
 
+// CmdComment is a comment line; not a real command.
 type CmdComment struct {
 	Comment string
 }
@@ -28,6 +44,9 @@ func (CmdComment) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // get-mark ////////////////////////////////////////////////////////////////////
 
+// CmdGetMark requests that the Backend to report back (over the
+// auxiliary cat-blob stream) with the SHA-1 corresponding to the
+// given Mark.
 type CmdGetMark struct {
 	Mark int
 }
@@ -52,6 +71,10 @@ func (CmdGetMark) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // cat-blob ////////////////////////////////////////////////////////////////////
 
+// CmdCatBlob requests that the Backend to report back (over the
+// auxiliary cat-blob stream) with the SHA-1 and content of the
+// requested blob.  The blob can be specified either by a mark
+// reference (":<idnum>") or by a full 40-byte SHA-1.
 type CmdCatBlob struct {
 	DataRef string
 }
@@ -71,6 +94,12 @@ func (CmdCatBlob) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // ls //////////////////////////////////////////////////////////////////////////
 
+// CmdLs requests that the Backend to report back (over the auxiliary
+// cat-blob stream) with information about the object at a path in the
+// specified commit.  If inside of a commit, specifying the commit is
+// optional, and the ongoing commit is used.  The commit can be
+// specified either by a mark reference (":<idnum>") or by a full
+// 40-byte SHA-1.
 type CmdLs struct {
 	DataRef string // optional if inside of a commit
 	Path    Path

@@ -1,3 +1,18 @@
+// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 package textproto
 
 import (
@@ -8,6 +23,7 @@ import (
 	"strings"
 )
 
+// FIReader is a low-level parser of a fast-import stream.
 type FIReader struct {
 	r *bufio.Reader
 
@@ -15,12 +31,16 @@ type FIReader struct {
 	err  error
 }
 
+// NewFIReader creates a new FIReader parser.
 func NewFIReader(r io.Reader) *FIReader {
 	return &FIReader{
 		r: bufio.NewReader(r),
 	}
 }
 
+// ReadLine reads a "line" from the stream; with special handling for
+// the "data" command, which isn't really a single line, but rather
+// contains arbitrary binary data.
 func (fir *FIReader) ReadLine() (line string, err error) {
 	for len(line) <= 1 {
 		line, err = fir.r.ReadString('\n')
@@ -58,21 +78,26 @@ func (fir *FIReader) ReadLine() (line string, err error) {
 	return
 }
 
+// FIWriter is a low-level marshaller of a fast-import stream.
 type FIWriter struct {
 	w io.Writer
 }
 
+// NewFIWriter creates a new FIWriter marshaller.
 func NewFIWriter(w io.Writer) *FIWriter {
 	return &FIWriter{
 		w: w,
 	}
 }
 
+// WriteLine writes an ordinary line to the stream; arguments are
+// handled similarly to fmt.Println.
 func (fiw *FIWriter) WriteLine(a ...interface{}) error {
 	_, err := fmt.Fprintln(fiw.w, a...)
 	return err
 }
 
+// WriteData writes a 'data' command to the stream.
 func (fiw *FIWriter) WriteData(data string) error {
 	err := fiw.WriteLine("data", len(data))
 	if err != nil {
