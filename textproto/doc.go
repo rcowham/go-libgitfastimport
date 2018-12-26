@@ -16,9 +16,7 @@
 // Package textproto implements low-level details of the fast-import
 // format.
 //
-// This package deals with parsing and marshalling idiosyncratic
-// datatypes used by the format (Ident tuples, 18-bit Mode numbers,
-// oddly-quoted Path strings), and abstracting over special-case
-// commands that break the "line-based" nature of the format (the
-// "data" command, responses to the "cat-blob" command).
+// This package deals with abstracting over special-case commands that
+// break the "line-based" nature of the format (the "data" command,
+// responses to the "cat-blob" command).
 package textproto
