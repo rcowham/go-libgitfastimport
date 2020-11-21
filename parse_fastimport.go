@@ -16,6 +16,7 @@
 package libfastimport
 
 import (
+	"io"
 	"strings"
 
 	"git.lukeshu.com/go/libfastimport/textproto"
@@ -118,6 +119,9 @@ func (p *parser) parse() error {
 	for {
 		line, err := p.PeekLine()
 		if err != nil {
+			if err == io.EOF && p.inCommit {
+				p.ret_cmd <- CmdCommitEnd{}
+			}
 			return err
 		}
 		subparser := parser_regular(line)

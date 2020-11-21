@@ -38,7 +38,6 @@ type Ident struct {
 func (ut Ident) String() string {
 	if ut.Name == "" {
 		return fmt.Sprintf("<%s> %d %s",
-			ut.Name,
 			ut.Email,
 			ut.Time.Unix(),
 			ut.Time.Format("-0700"))
