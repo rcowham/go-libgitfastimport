@@ -33,13 +33,14 @@ import (
 // terminated by a CmdCommitEnd command.  It is not nescessary to
 // manually emit a CmdCommitEnd when writing to a Backend.
 type CmdCommit struct {
-	Ref       string
-	Mark      int // optional; < 1 for non-use
-	Author    *Ident
-	Committer Ident
-	Msg       string
-	From      string
-	Merge     []string
+	Ref         string
+	Mark        int    // optional; < 1 for non-use
+	OriginalOID string // optional
+	Author      *Ident
+	Committer   Ident
+	Msg         string
+	From        string
+	Merge       []string
 }
 
 func (c CmdCommit) fiCmdClass() cmdClass { return cmdClassCommand }
@@ -49,6 +50,9 @@ func (c CmdCommit) fiCmdWrite(fiw fiWriter) error {
 	ez.WriteLine("commit", c.Ref)
 	if c.Mark > 0 {
 		ez.WriteMark(c.Mark)
+	}
+	if c.OriginalOID != "" {
+		ez.WriteLine("original-oid", c.OriginalOID)
 	}
 	if c.Author != nil {
 		ez.WriteLine("author", *c.Author)
@@ -76,6 +80,11 @@ func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	if strings.HasPrefix(ez.PeekLine(), "mark :") {
 		c.Mark, err = strconv.Atoi(trimLinePrefix(ez.ReadLine(), "mark :"))
 		ez.Errcheck(err)
+	}
+
+	// original-oid?
+	if strings.HasPrefix(ez.PeekLine(), "original-oid ") {
+		c.OriginalOID = trimLinePrefix(ez.ReadLine(), "original-oid ")
 	}
 
 	// ('author' (SP <name>)? SP LT <email> GT SP <when> LF)?
@@ -130,10 +139,11 @@ func (CmdCommitEnd) fiCmdRead(fir fiReader) (Cmd, error) { panic("not reached") 
 //
 // Hint: Use CmdReset to create a *lightweight* tag.
 type CmdTag struct {
-	RefName   string
-	CommitIsh string
-	Tagger    Ident
-	Data      string
+	RefName     string
+	CommitIsh   string
+	OriginalOID string // optional
+	Tagger      Ident
+	Data        string
 }
 
 func (c CmdTag) fiCmdClass() cmdClass { return cmdClassCommand }
@@ -142,6 +152,9 @@ func (c CmdTag) fiCmdWrite(fiw fiWriter) error {
 
 	ez.WriteLine("tag", c.RefName)
 	ez.WriteLine("from", c.CommitIsh)
+	if c.OriginalOID != "" {
+		ez.WriteLine("original-oid", c.OriginalOID)
+	}
 	ez.WriteLine("tagger", c.Tagger)
 	ez.WriteData(c.Data)
 
@@ -160,6 +173,11 @@ func (CmdTag) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 		ez.Errcheck(errors.Errorf("tag: expected from command: %v", ez.ReadLine()))
 	}
 	c.CommitIsh = trimLinePrefix(ez.ReadLine(), "from ")
+
+	// original-oid?
+	if strings.HasPrefix(ez.PeekLine(), "original-oid ") {
+		c.OriginalOID = trimLinePrefix(ez.ReadLine(), "original-oid ")
+	}
 
 	// 'tagger' (SP <name>)? SP LT <email> GT SP <when> LF
 	if !strings.HasPrefix(ez.PeekLine(), "tagger ") {
@@ -221,8 +239,9 @@ func (CmdReset) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 // given), or by pre-calculating the Git SHA-1 (though this is
 // needlessly difficult, just specify a Mark).
 type CmdBlob struct {
-	Mark int // optional
-	Data string
+	Mark        int    // optional
+	OriginalOID string // optional
+	Data        string
 }
 
 func (c CmdBlob) fiCmdClass() cmdClass { return cmdClassCommand }
@@ -232,6 +251,9 @@ func (c CmdBlob) fiCmdWrite(fiw fiWriter) error {
 	ez.WriteLine("blob")
 	if c.Mark > 0 {
 		ez.WriteMark(c.Mark)
+	}
+	if c.OriginalOID != "" {
+		ez.WriteLine("original-oid", c.OriginalOID)
 	}
 	ez.WriteData(c.Data)
 
@@ -249,6 +271,11 @@ func (CmdBlob) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	// mark?
 	if strings.HasPrefix(ez.PeekLine(), "mark :") {
 		c.Mark, err = strconv.Atoi(trimLinePrefix(ez.ReadLine(), "mark :"))
+	}
+
+	// original-oid?
+	if strings.HasPrefix(ez.PeekLine(), "original-oid ") {
+		c.OriginalOID = trimLinePrefix(ez.ReadLine(), "original-oid ")
 	}
 
 	// data
