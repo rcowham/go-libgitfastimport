@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018, 2021  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -21,6 +21,10 @@ import (
 
 	"github.com/pkg/errors"
 )
+
+// This file deals with comments, and with commands for which the
+// specification says (or said) that the command "can be used anywhere
+// in the stream that comments are accepted".
 
 // comment /////////////////////////////////////////////////////////////////////
 
@@ -105,19 +109,17 @@ type CmdLs struct {
 	Path    Path
 }
 
-// If you're thinking "but wait, parser_registerCmd will see CmdLs as
-// cmdClassCommit, not cmdClassComment, that means it won't be allowed
-// embedded inside other commands! (while still allowing it both
-// inside and outside of a commit)", you're absolutely correct.
-// That's the desired behavior.  It's a happy accident that the little
-// fiCmdClass hack works out that way, instead of having to add even
-// more complexity.
-
 func (c CmdLs) fiCmdClass() cmdClass {
+	// As of git v2.21, the docs say this is cmdClassComment, but
+	// the actual code disagrees.
 	if c.DataRef == "" {
-		return cmdClassCommit
+		// Yeah, this will give slightly misleading info to
+		// parser_registerCmd(), but that's OK,
+		// parser_registerCmd() only really cares about the
+		// cmdClassInCommand bit.
+		return cmdClassInCommit
 	}
-	return cmdClassComment
+	return cmdClassCommand | cmdClassInCommit
 }
 func (c CmdLs) fiCmdWrite(fiw fiWriter) error {
 	if c.DataRef == "" {

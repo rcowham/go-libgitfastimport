@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018, 2021  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -41,10 +41,11 @@ type fiWriter interface {
 type cmdClass int
 
 const (
-	cmdClassCommand cmdClass = 1 // may be a top-level command
-	cmdClassCommit  cmdClass = 2 // may be used within in a commit
+	cmdClassCommand   cmdClass = 1 << iota // can be a top-level command
+	cmdClassInCommit                       // can be used within in a commit
+	cmdClassInCommand                      // can be used in-between lines of another multi-line command
 
-	cmdClassComment cmdClass = cmdClassCommand | cmdClassCommit
+	cmdClassComment = cmdClassCommand | cmdClassInCommit | cmdClassInCommand // "can be used anywhere in the stream that comments are accepted"
 )
 
 // Cmd is a command that may be found in a fast-import stream.
@@ -52,4 +53,8 @@ type Cmd interface {
 	fiCmdRead(fiReader) (Cmd, error)
 	fiCmdWrite(fiWriter) error
 	fiCmdClass() cmdClass
+}
+
+func cmdIs(cmd Cmd, class cmdClass) bool {
+	return cmd.fiCmdClass()&class != 0
 }

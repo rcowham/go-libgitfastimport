@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018, 2021  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -89,17 +89,11 @@ func (b *Backend) Do(cmd Cmd) error {
 		return b.err
 	}
 
-	switch cmd.fiCmdClass() {
-	case cmdClassCommand:
+	switch {
+	case !cmdIs(cmd, cmdClassInCommit):
 		_, b.inCommit = cmd.(CmdCommit)
-	case cmdClassCommit:
-		if !b.inCommit {
-			panic(errors.Errorf("Cannot issue commit sub-command outside of a commit: %[1]T(%#[1]v)", cmd))
-		}
-	case cmdClassComment:
-		/* do nothing */
-	default:
-		panic(errors.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
+	case !b.inCommit && !cmdIs(cmd, cmdClassCommand):
+		panic(errors.Errorf("Cannot issue commit sub-command outside of a commit: %[1]T(%#[1]v)", cmd))
 	}
 
 	err := cmd.fiCmdWrite(b.fastImportWrite)

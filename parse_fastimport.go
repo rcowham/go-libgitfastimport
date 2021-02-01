@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018, 2020  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018, 2020-2021  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -27,13 +27,10 @@ var parser_regularCmds = make(map[string]Cmd)
 var parser_commentCmds = make(map[string]Cmd)
 
 func parser_registerCmd(prefix string, cmd Cmd) {
-	switch cmd.fiCmdClass() {
-	case cmdClassCommand, cmdClassCommit:
-		parser_regularCmds[prefix] = cmd
-	case cmdClassComment:
+	if cmdIs(cmd, cmdClassInCommand) {
 		parser_commentCmds[prefix] = cmd
-	default:
-		panic(errors.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
+	} else {
+		parser_regularCmds[prefix] = cmd
 	}
 }
 
@@ -133,20 +130,14 @@ func (p *parser) parse() error {
 			return err
 		}
 
-		switch cmd.fiCmdClass() {
-		case cmdClassCommand:
+		switch {
+		case !cmdIs(cmd, cmdClassInCommit):
 			if p.inCommit {
 				p.ret_cmd <- CmdCommitEnd{}
 			}
 			_, p.inCommit = cmd.(CmdCommit)
-		case cmdClassCommit:
-			if !p.inCommit {
-				return errors.Errorf("Got in-commit-only command outside of a commit: %[1]T(%#[1]v)", cmd)
-			}
-		case cmdClassComment:
-			/* do nothing */
-		default:
-			panic(errors.Errorf("invalid cmdClass: %d", cmd.fiCmdClass()))
+		case !p.inCommit && !cmdIs(cmd, cmdClassCommand):
+			return errors.Errorf("Got in-commit-only command outside of a commit: %[1]T(%#[1]v)", cmd)
 		}
 
 		p.ret_cmd <- cmd

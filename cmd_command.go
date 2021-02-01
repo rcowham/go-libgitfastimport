@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018, 2021  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -119,7 +119,7 @@ func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 // Backend.
 type CmdCommitEnd struct{}
 
-func (CmdCommitEnd) fiCmdClass() cmdClass                { return cmdClassCommit }
+func (CmdCommitEnd) fiCmdClass() cmdClass                { return cmdClassInCommit }
 func (CmdCommitEnd) fiCmdWrite(fiw fiWriter) error       { return nil }
 func (CmdCommitEnd) fiCmdRead(fir fiReader) (Cmd, error) { panic("not reached") }
 

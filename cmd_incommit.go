@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018, 2021  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -37,7 +37,7 @@ type FileModify struct {
 	DataRef string
 }
 
-func (o FileModify) fiCmdClass() cmdClass { return cmdClassCommit }
+func (o FileModify) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileModify) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("M", o.Mode, o.DataRef, o.Path)
 }
@@ -98,7 +98,7 @@ type FileModifyInline struct {
 	Data string
 }
 
-func (o FileModifyInline) fiCmdClass() cmdClass { return cmdClassCommit }
+func (o FileModifyInline) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileModifyInline) fiCmdWrite(fiw fiWriter) error {
 	ez := &ezfiw{fiw: fiw}
 	ez.WriteLine("M", o.Mode, "inline", o.Path)
@@ -115,7 +115,7 @@ type FileDelete struct {
 	Path Path
 }
 
-func (o FileDelete) fiCmdClass() cmdClass { return cmdClassCommit }
+func (o FileDelete) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileDelete) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("D", o.Path)
 }
@@ -138,7 +138,7 @@ type FileCopy struct {
 	Dst Path
 }
 
-func (o FileCopy) fiCmdClass() cmdClass { return cmdClassCommit }
+func (o FileCopy) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileCopy) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("C", o.Src, o.Dst)
 }
@@ -158,7 +158,7 @@ type FileRename struct {
 	Dst string
 }
 
-func (o FileRename) fiCmdClass() cmdClass { return cmdClassCommit }
+func (o FileRename) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileRename) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("R", o.Src, o.Dst)
 }
@@ -175,7 +175,7 @@ func (FileRename) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 // CmdCommit.
 type FileDeleteAll struct{}
 
-func (o FileDeleteAll) fiCmdClass() cmdClass { return cmdClassCommit }
+func (o FileDeleteAll) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileDeleteAll) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("deleteall")
 }
@@ -203,7 +203,7 @@ type NoteModify struct {
 	DataRef   string
 }
 
-func (o NoteModify) fiCmdClass() cmdClass { return cmdClassCommit }
+func (o NoteModify) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o NoteModify) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("N", o.DataRef, o.CommitIsh)
 }
@@ -257,7 +257,7 @@ type NoteModifyInline struct {
 	Data      string
 }
 
-func (o NoteModifyInline) fiCmdClass() cmdClass { return cmdClassCommit }
+func (o NoteModifyInline) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o NoteModifyInline) fiCmdWrite(fiw fiWriter) error {
 	ez := &ezfiw{fiw: fiw}
 	ez.WriteLine("N", "inline", o.CommitIsh)
