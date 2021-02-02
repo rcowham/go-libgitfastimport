@@ -305,6 +305,49 @@ func (CmdBlob) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	return
 }
 
+// alias ///////////////////////////////////////////////////////////////////////
+
+// CmdAlias requests that the Backend record that a merk refers to a
+// given object without first creating any new object.
+type CmdAlias struct {
+	Mark      int
+	CommitIsh string
+}
+
+func (c CmdAlias) fiCmdClass() cmdClass { return cmdClassCommand }
+func (c CmdAlias) fiCmdWrite(fiw fiWriter) error {
+	ez := &ezfiw{fiw: fiw}
+	ez.WriteLine("alias")
+	ez.WriteMark(c.Mark)
+	ez.WriteLine("to", c.CommitIsh)
+	return ez.err
+}
+func init() { parser_registerCmd("alias\n", CmdCheckpoint{}) }
+func (CmdAlias) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
+	ez := &ezfir{fir: fir}
+	defer func() { err = ez.Defer() }()
+
+	// 'alias' LF
+	_ = ez.ReadLine()
+	c := CmdAlias{}
+
+	// mark
+	if !strings.HasPrefix(ez.PeekLine(), "mark :") {
+		ez.Errcheck(errors.Errorf("alias: expected mark command: %v", ez.ReadLine()))
+	}
+	c.Mark, err = strconv.Atoi(trimLinePrefix(ez.ReadLine(), "mark :"))
+	ez.Errcheck(err)
+
+	// 'to' SP <commit-ish LF
+	if !strings.HasPrefix(ez.PeekLine(), "to ") {
+		ez.Errcheck(errors.Errorf("alias: expected to command: %v", ez.ReadLine()))
+	}
+	c.CommitIsh = trimLinePrefix(ez.ReadLine(), "to ")
+
+	cmd = c
+	return
+}
+
 // checkpoint //////////////////////////////////////////////////////////////////
 
 // CmdCheckpoint requests that the Backend flush already-sent data.
