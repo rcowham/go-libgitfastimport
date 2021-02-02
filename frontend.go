@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018, 2021  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -37,6 +37,10 @@ func (e UnsupportedCommand) Error() string {
 // it was not given that name because the RespondGetMark,
 // RespondCatBlob, and RespondLs methods actually write information;
 // it isn't a read-only object.
+//
+// The parser is a bit more forgiving than git's own parser; it allows
+// extra newlines anywhere it allows comments, whereas git's own
+// parser is quite strict about newlines.
 type Frontend struct {
 	fastImport   *parser
 	catBlobWrite *textproto.CatBlobWriter
