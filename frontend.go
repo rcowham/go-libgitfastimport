@@ -38,9 +38,11 @@ func (e UnsupportedCommand) Error() string {
 // RespondCatBlob, and RespondLs methods actually write information;
 // it isn't a read-only object.
 //
-// The parser is a bit more forgiving than git's own parser; it allows
-// extra newlines anywhere it allows comments, whereas git's own
-// parser is quite strict about newlines.
+// The parser is a bit more forgiving than git's own parser.  It
+// allows extra newlines anywhere it allows comments, whereas git's
+// own parser is quite strict about newlines.  It allows 'cat-blob'
+// commands anywhere it allows comments, which git used to allow, but
+// was made stricter in git v2.22.0.
 type Frontend struct {
 	fastImport   *parser
 	catBlobWrite *textproto.CatBlobWriter

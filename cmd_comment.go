@@ -83,7 +83,15 @@ type CmdCatBlob struct {
 	DataRef string
 }
 
-func (c CmdCatBlob) fiCmdClass() cmdClass { return cmdClassComment }
+func (c CmdCatBlob) fiCmdClass() cmdClass {
+	// Prior to git v2.22.0 this was 'cmdClassComment', but in
+	// v2.22.0 it was changed to a stricter
+	// 'cmdClassCommand|cmdClassInCommit|cmdClassInFileModify'.  I
+	// don't want to implement cmdClassInFileModify for just this
+	// one command, and also I want to have better backward
+	// compatibility; so I'm keeping it as 'cmdClassComment'.
+	return cmdClassComment
+}
 func (c CmdCatBlob) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("cat-blob", c.DataRef)
 }
