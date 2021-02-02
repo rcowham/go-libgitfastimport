@@ -55,7 +55,14 @@ type CmdGetMark struct {
 	Mark int
 }
 
-func (c CmdGetMark) fiCmdClass() cmdClass { return cmdClassComment }
+func (c CmdGetMark) fiCmdClass() cmdClass {
+	// Prior to git v2.22.0 this was 'cmdClassComment', but in
+	// v2.22.0 it was changed to a stricter
+	// 'cmdClassCommand|cmdClassInCommit'.  I want to have better
+	// backward compatibility, so I'm keeping it as
+	// 'cmdClassComment'.
+	return cmdClassComment
+}
 func (c CmdGetMark) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("get-mark", ":"+strconv.Itoa(c.Mark))
 }

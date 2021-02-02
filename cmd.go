@@ -26,6 +26,8 @@
 //
 // A program can read commands from a frontend by wrapping the
 // appropriate io.Reader with a Frontend object.
+//
+// This is up-to-date with full syntax supported by git v2.22.0.
 package libfastimport
 
 type fiReader interface {
