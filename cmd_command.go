@@ -149,6 +149,7 @@ func (CmdCommitEnd) fiCmdRead(fir fiReader) (Cmd, error) { panic("not reached") 
 // Hint: Use CmdReset to create a *lightweight* tag.
 type CmdTag struct {
 	RefName     string
+	Mark        int // optional; < 1 for non-use
 	CommitIsh   string
 	OriginalOID string // optional
 	Tagger      Ident
@@ -160,6 +161,9 @@ func (c CmdTag) fiCmdWrite(fiw fiWriter) error {
 	ez := &ezfiw{fiw: fiw}
 
 	ez.WriteLine("tag", c.RefName)
+	if c.Mark > 0 {
+		ez.WriteMark(c.Mark)
+	}
 	ez.WriteLine("from", c.CommitIsh)
 	if c.OriginalOID != "" {
 		ez.WriteLine("original-oid", c.OriginalOID)
@@ -176,6 +180,12 @@ func (CmdTag) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 	// 'tag' SP <name> LF
 	c := CmdTag{RefName: trimLinePrefix(ez.ReadLine(), "tag ")}
+
+	// mark?
+	if strings.HasPrefix(ez.PeekLine(), "mark :") {
+		c.Mark, err = strconv.Atoi(trimLinePrefix(ez.ReadLine(), "mark :"))
+		ez.Errcheck(err)
+	}
 
 	// 'from' SP <commit-ish> LF
 	if !strings.HasPrefix(ez.PeekLine(), "from ") {
