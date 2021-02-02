@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018, 2020  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017-2018, 2020-2021  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -27,8 +27,8 @@ import (
 // Ident is a tuple of a commiter's (or author's) name, email, and a
 // timestamp with timezone.
 //
-// BUG(lukeshu): Ident (and ParseIdent) only supports the "raw" date
-// format (not "rfc2822" or "now")
+// BUG(lukeshu): Ident (and ParseIdent) only supports the
+// "raw"/"raw-permissive" date format (not "rfc2822" or "now")
 type Ident struct {
 	Name  string
 	Email string
