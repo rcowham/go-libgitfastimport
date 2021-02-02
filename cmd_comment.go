@@ -110,8 +110,10 @@ type CmdLs struct {
 }
 
 func (c CmdLs) fiCmdClass() cmdClass {
-	// As of git v2.21, the docs say this is cmdClassComment, but
-	// the actual code disagrees.
+	// Prior to git v2.22.0 the docs said 'ls' was allowed
+	// anywhere a comment was allowed, but that was never really
+	// true, and in v2.22.0 the docs were updated to match the
+	// code.
 	if c.DataRef == "" {
 		// Yeah, this will give slightly misleading info to
 		// parser_registerCmd(), but that's OK,
