@@ -38,6 +38,7 @@ type CmdCommit struct {
 	OriginalOID string // optional
 	Author      *Ident
 	Committer   Ident
+	Encoding    string // optional
 	Msg         string
 	From        string
 	Merge       []string
@@ -58,6 +59,9 @@ func (c CmdCommit) fiCmdWrite(fiw fiWriter) error {
 		ez.WriteLine("author", *c.Author)
 	}
 	ez.WriteLine("committer", c.Committer)
+	if c.Encoding != "" {
+		ez.WriteLine("encoding", c.Encoding)
+	}
 	ez.WriteData(c.Msg)
 	if c.From != "" {
 		ez.WriteLine("from", c.From)
@@ -100,6 +104,11 @@ func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	}
 	c.Committer, err = ParseIdent(trimLinePrefix(ez.ReadLine(), "committer "))
 	ez.Errcheck(err)
+
+	// ('encoding' SP <encoding> LF)?
+	if strings.HasPrefix(ez.PeekLine(), "encoding ") {
+		c.Encoding = trimLinePrefix(ez.ReadLine(), "encoding ")
+	}
 
 	// data
 	c.Msg, err = parse_data(ez.ReadLine())
