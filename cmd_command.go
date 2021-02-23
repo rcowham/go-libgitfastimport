@@ -75,7 +75,7 @@ func (c CmdCommit) fiCmdWrite(fiw fiWriter) error {
 func init() { parser_registerCmd("commit ", CmdCommit{}) }
 func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	ez := &ezfir{fir: fir}
-	defer func() { err = ez.Defer() }()
+	defer ez.Defer(&err)
 
 	// 'commit' SP <ref> LF
 	c := CmdCommit{Ref: trimLinePrefix(ez.ReadLine(), "commit ")}
@@ -176,7 +176,7 @@ func (c CmdTag) fiCmdWrite(fiw fiWriter) error {
 func init() { parser_registerCmd("tag ", CmdTag{}) }
 func (CmdTag) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	ez := &ezfir{fir: fir}
-	defer func() { err = ez.Defer() }()
+	defer ez.Defer(&err)
 
 	// 'tag' SP <name> LF
 	c := CmdTag{RefName: trimLinePrefix(ez.ReadLine(), "tag ")}
@@ -237,7 +237,7 @@ func (c CmdReset) fiCmdWrite(fiw fiWriter) error {
 func init() { parser_registerCmd("reset ", CmdReset{}) }
 func (CmdReset) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	ez := &ezfir{fir: fir}
-	defer func() { err = ez.Defer() }()
+	defer ez.Defer(&err)
 
 	// 'reset' SP <ref> LF
 	c := CmdReset{RefName: trimLinePrefix(ez.ReadLine(), "reset ")}
@@ -281,7 +281,7 @@ func (c CmdBlob) fiCmdWrite(fiw fiWriter) error {
 func init() { parser_registerCmd("blob\n", CmdBlob{}) }
 func (CmdBlob) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	ez := &ezfir{fir: fir}
-	defer func() { err = ez.Defer() }()
+	defer ez.Defer(&err)
 
 	// 'blob' LF
 	_ = ez.ReadLine()
@@ -325,7 +325,7 @@ func (c CmdAlias) fiCmdWrite(fiw fiWriter) error {
 func init() { parser_registerCmd("alias\n", CmdCheckpoint{}) }
 func (CmdAlias) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	ez := &ezfir{fir: fir}
-	defer func() { err = ez.Defer() }()
+	defer ez.Defer(&err)
 
 	// 'alias' LF
 	_ = ez.ReadLine()

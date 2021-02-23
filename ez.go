@@ -1,4 +1,4 @@
-// Copyright (C) 2017  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017, 2021  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -51,7 +51,7 @@ type ezfir struct {
 
 var ezPanic = errors.New("everything is fine")
 
-func (e *ezfir) Defer() error {
+func (e *ezfir) Defer(err *error) {
 	if e.err != nil {
 		r := recover()
 		if r == nil {
@@ -60,9 +60,8 @@ func (e *ezfir) Defer() error {
 		if r != ezPanic {
 			panic(r)
 		}
-		return e.err
+		*err = e.err
 	}
-	return nil
 }
 
 func (e *ezfir) Errcheck(err error) {
