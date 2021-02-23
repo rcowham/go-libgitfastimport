@@ -1,4 +1,4 @@
-// Copyright (C) 2017  Luke Shumaker <lukeshu@lukeshu.com>
+// Copyright (C) 2017, 2021  Luke Shumaker <lukeshu@lukeshu.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -35,19 +35,19 @@ func trimLinePrefix(line string, prefix string) string {
 func parse_data(line string) (data string, err error) {
 	nl := strings.IndexByte(line, '\n')
 	if nl < 0 {
-		return "", errors.Errorf("data: expected newline: %v", data)
+		return "", errors.Errorf("data: expected newline: %q", data)
 	}
 	head := line[:nl+1]
 	rest := line[nl+1:]
 	if !strings.HasPrefix(head, "data ") {
-		return "", errors.Errorf("data: could not parse: %v", data)
+		return "", errors.Errorf("data: could not parse: %q", data)
 	}
 	if strings.HasPrefix(head, "data <<") {
 		// Delimited format
 		delim := trimLinePrefix(head, "data <<")
 		suffix := "\n" + delim + "\n"
 		if !strings.HasSuffix(rest, suffix) {
-			return "", errors.Errorf("data: did not find suffix: %v", suffix)
+			return "", errors.Errorf("data: did not find suffix: %q", suffix)
 		}
 		data = strings.TrimSuffix(rest, suffix)
 	} else {

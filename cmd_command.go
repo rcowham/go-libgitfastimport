@@ -100,7 +100,7 @@ func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 	// 'committer' (SP <name>)? SP LT <email> GT SP <when> LF
 	if !strings.HasPrefix(ez.PeekLine(), "committer ") {
-		ez.Errcheck(errors.Errorf("commit: expected committer command: %v", ez.ReadLine()))
+		ez.Errcheck(errors.Errorf("commit: expected committer command: %q", ez.ReadLine()))
 	}
 	c.Committer, err = ParseIdent(trimLinePrefix(ez.ReadLine(), "committer "))
 	ez.Errcheck(err)
@@ -189,7 +189,7 @@ func (CmdTag) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 	// 'from' SP <commit-ish> LF
 	if !strings.HasPrefix(ez.PeekLine(), "from ") {
-		ez.Errcheck(errors.Errorf("tag: expected from command: %v", ez.ReadLine()))
+		ez.Errcheck(errors.Errorf("tag: expected from command: %q", ez.ReadLine()))
 	}
 	c.CommitIsh = trimLinePrefix(ez.ReadLine(), "from ")
 
@@ -200,7 +200,7 @@ func (CmdTag) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 	// 'tagger' (SP <name>)? SP LT <email> GT SP <when> LF
 	if !strings.HasPrefix(ez.PeekLine(), "tagger ") {
-		ez.Errcheck(errors.Errorf("tag: expected tagger command: %v", ez.ReadLine()))
+		ez.Errcheck(errors.Errorf("tag: expected tagger command: %q", ez.ReadLine()))
 	}
 	c.Tagger, err = ParseIdent(trimLinePrefix(ez.ReadLine(), "tagger "))
 	ez.Errcheck(err)
@@ -333,14 +333,14 @@ func (CmdAlias) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 	// mark
 	if !strings.HasPrefix(ez.PeekLine(), "mark :") {
-		ez.Errcheck(errors.Errorf("alias: expected mark command: %v", ez.ReadLine()))
+		ez.Errcheck(errors.Errorf("alias: expected mark command: %q", ez.ReadLine()))
 	}
 	c.Mark, err = strconv.Atoi(trimLinePrefix(ez.ReadLine(), "mark :"))
 	ez.Errcheck(err)
 
 	// 'to' SP <commit-ish LF
 	if !strings.HasPrefix(ez.PeekLine(), "to ") {
-		ez.Errcheck(errors.Errorf("alias: expected to command: %v", ez.ReadLine()))
+		ez.Errcheck(errors.Errorf("alias: expected to command: %q", ez.ReadLine()))
 	}
 	c.CommitIsh = trimLinePrefix(ez.ReadLine(), "to ")
 
