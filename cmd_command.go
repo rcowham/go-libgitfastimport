@@ -322,7 +322,7 @@ func (c CmdAlias) fiCmdWrite(fiw fiWriter) error {
 	ez.WriteLine("to", c.CommitIsh)
 	return ez.err
 }
-func init() { parser_registerCmd("alias\n", CmdCheckpoint{}) }
+func init() { parser_registerCmd("alias\n", CmdAlias{}) }
 func (CmdAlias) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	ez := &ezfir{fir: fir}
 	defer ez.Defer(&err)
