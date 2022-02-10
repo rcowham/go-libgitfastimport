@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func writeToTempFile(contents string) string {
@@ -41,54 +42,39 @@ M 100644 :1 test.txt
 
 `
 
-	// fname := writeToTempFile(input)
-	// file, err := os.Open("/Users/rcowham/go/src/github.com/rcowham/gitp4transfer/test_data/export1")
-	// file, err := os.Open(fname)
-	// if err != nil {
-	// 	fmt.Printf("ERROR: Failed to open file '%s': %v\n", fname, err)
-	// 	t.Fail()
-	// }
-	// defer file.Close()
-	// buf := bufio.NewReader(file)
 	buf := strings.NewReader(input)
 	f := NewFrontend(buf, nil, nil)
 	for {
 		cmd, err := f.ReadCmd()
 		if err != nil {
 			if err != io.EOF {
-				fmt.Printf("ERROR: Failed to read cmd: %v\n", err)
+				t.Errorf("ERROR: Failed to read cmd: %v\n", err)
 			}
 			break
 		}
 		switch cmd.(type) {
 		case CmdBlob:
 			blob := cmd.(CmdBlob)
-			fmt.Printf("Blob: Mark:%d OriginalOID:%s\n", blob.Mark, blob.OriginalOID)
+			assert.Equal(t, 1, blob.Mark)
 		case CmdReset:
-			reset := cmd.(CmdReset)
-			fmt.Printf("Reset: - %+v\n", reset)
+			r := cmd.(CmdReset)
+			assert.Equal(t, "refs/heads/main", r.RefName)
 		case CmdCommit:
-			commit := cmd.(CmdCommit)
-			fmt.Printf("Commit:  %+v\n", commit)
+			c := cmd.(CmdCommit)
+			assert.Equal(t, "refs/heads/main", c.Ref)
+			assert.Equal(t, "Robert Cowham", c.Author.Name)
+			assert.Equal(t, "rcowham@perforce.com", c.Author.Email)
+			assert.Equal(t, "test\n", c.Msg)
 		case CmdCommitEnd:
-			commit := cmd.(CmdCommitEnd)
-			fmt.Printf("CommitEnd:  %+v\n", commit)
 		case FileModify:
 			f := cmd.(FileModify)
-			fmt.Printf("FileModify:  %+v\n", f)
-		case FileDelete:
-			f := cmd.(FileDelete)
-			fmt.Printf("FileModify: Path:%s\n", f.Path)
-		case FileCopy:
-			f := cmd.(FileCopy)
-			fmt.Printf("FileCopy: Src:%s Dst:%s\n", f.Src, f.Dst)
-		case FileRename:
-			f := cmd.(FileRename)
-			fmt.Printf("FileRename: Src:%s Dst:%s\n", f.Src, f.Dst)
+			assert.Equal(t, "test.txt", f.Path.String())
+			assert.Equal(t, "100644", f.Mode.String())
+			assert.Equal(t, ":1", f.DataRef)
+		case FileDelete, FileCopy, FileRename:
+			t.Error("Unexpected")
 		default:
-			fmt.Printf("Not handled\n")
-			fmt.Printf("Found cmd %v\n", cmd)
-			fmt.Printf("Cmd type %v\n", reflect.TypeOf(cmd))
+			t.Errorf("Unexpected cmd: %+v\n", cmd)
 		}
 	}
 
