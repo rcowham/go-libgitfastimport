@@ -20,7 +20,7 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"github.com/rcowham/go-libgitfastexport/textproto"
+	"github.com/rcowham/go-libgitfastimport/textproto"
 )
 
 // A Backend is something that consumes a fast-import stream; the

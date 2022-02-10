@@ -20,7 +20,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/rcowham/go-libgitfastexport/textproto"
+	"github.com/rcowham/go-libgitfastimport/textproto"
 )
 
 type UnsupportedCommand string
