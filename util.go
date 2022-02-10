@@ -29,7 +29,7 @@ func trimLinePrefix(line string, prefix string) string {
 		if len(line) < n {
 			n = len(line)
 		}
-		panic(fmt.Sprintf("line didn't have prefix: %s", line[:n])
+		panic(fmt.Sprintf("line didn't have prefix: %s", line[:n]))
 	}
 	if !strings.HasSuffix(line, "\n") {
 		panic("line didn't have LF")

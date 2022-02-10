@@ -19,8 +19,8 @@ import (
 	"io"
 	"strings"
 
-	"git.lukeshu.com/go/libfastimport/textproto"
 	"github.com/pkg/errors"
+	"github.com/rcowham/go-libgitfastexport/textproto"
 )
 
 var parser_regularCmds = make(map[string]Cmd)

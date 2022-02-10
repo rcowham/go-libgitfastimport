@@ -142,7 +142,7 @@ func (o FileCopy) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileCopy) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("C", o.Src, o.Dst)
 }
-func init() { parser_registerCmd("C ", FileDelete{}) }
+func init() { parser_registerCmd("C ", FileCopy{}) }
 func (FileCopy) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	// BUG(lukeshu): TODO: commit C not implemented
 	panic("TODO: commit C not implemented")
@@ -162,7 +162,7 @@ func (o FileRename) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileRename) fiCmdWrite(fiw fiWriter) error {
 	return fiw.WriteLine("R", o.Src, o.Dst)
 }
-func init() { parser_registerCmd("R ", FileDelete{}) }
+func init() { parser_registerCmd("R ", FileRename{}) }
 func (FileRename) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	// BUG(lukeshu): TODO: commit R not implemented
 	panic("TODO: commit R not implemented")
