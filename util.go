@@ -16,6 +16,7 @@
 package libfastimport
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -24,10 +25,14 @@ import (
 
 func trimLinePrefix(line string, prefix string) string {
 	if !strings.HasPrefix(line, prefix) {
-		panic("line didn't have prefix")
+		n := 80
+		if len(line) < n {
+			n = len(line)
+		}
+		panic(fmt.Sprintf("line didn't have prefix: %s", line[:n])
 	}
 	if !strings.HasSuffix(line, "\n") {
-		panic("line didn't have prefix")
+		panic("line didn't have LF")
 	}
 	return strings.TrimSuffix(strings.TrimPrefix(line, prefix), "\n")
 }
