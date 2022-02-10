@@ -164,8 +164,16 @@ func (o FileRename) fiCmdWrite(fiw fiWriter) error {
 }
 func init() { parser_registerCmd("R ", FileRename{}) }
 func (FileRename) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
-	// BUG(lukeshu): TODO: commit R not implemented
-	panic("TODO: commit R not implemented")
+	line, err := fir.ReadLine()
+	if err != nil {
+		return nil, err
+	}
+	str := trimLinePrefix(line, "R ")
+	fields := strings.SplitN(str, " ", 2)
+	if len(fields) != 2 {
+		return nil, errors.Errorf("filerename: malformed command: %q", line)
+	}
+	return FileRename{Src: PathUnescape(fields[0]).String(), Dst: PathUnescape(fields[1]).String()}, nil
 }
 
 // deleteall ///////////////////////////////////////////////////////////////////
