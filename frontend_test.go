@@ -3,11 +3,11 @@
 package libfastimport
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -33,22 +33,24 @@ test
 reset refs/heads/main
 commit refs/heads/main
 mark :2
-committer John Smith <john@example.com> 1644399073 +0000
-author John Smith <john@example.com> 1644399073 +0000
+author Robert Cowham <rcowham@perforce.com> 1644399073 +0000
+committer Robert Cowham <rcowham@perforce.com> 1644399073 +0000
 data 5
 test
 M 100644 :1 test.txt
 
 `
 
-	fname := writeToTempFile(input)
-	file, err := os.Open(fname)
-	if err != nil {
-		fmt.Printf("ERROR: Failed to open file '%s': %v\n", fname, err)
-		t.Fail()
-	}
-	defer file.Close()
-	buf := bufio.NewReader(file)
+	// fname := writeToTempFile(input)
+	// file, err := os.Open("/Users/rcowham/go/src/github.com/rcowham/gitp4transfer/test_data/export1")
+	// file, err := os.Open(fname)
+	// if err != nil {
+	// 	fmt.Printf("ERROR: Failed to open file '%s': %v\n", fname, err)
+	// 	t.Fail()
+	// }
+	// defer file.Close()
+	// buf := bufio.NewReader(file)
+	buf := strings.NewReader(input)
 	f := NewFrontend(buf, nil, nil)
 	for {
 		cmd, err := f.ReadCmd()
