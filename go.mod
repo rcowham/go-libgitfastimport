@@ -1,4 +1,4 @@
-module github.com/rcowham/go-libgitfastexport
+module github.com/rcowham/go-libgitfastimport
 
 go 1.15
 
