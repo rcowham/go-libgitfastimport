@@ -120,6 +120,69 @@ func TestParseRename(t *testing.T) {
 	runCmd(fmt.Sprintf("git mv %s %s", src, dst))
 	runCmd("git add .")
 	runCmd("git commit -m renamed")
+	export := "export.txt"
+	// fast-export with rename detection implemented
+	output, err := runCmd(fmt.Sprintf("git fast-export --all -M > %s", export))
+	if err != nil {
+		t.Errorf("ERROR: Failed to git export '%s': %v\n", export, err)
+	}
+	assert.Equal(t, "", output)
+
+	file, err := os.Open(export)
+	if err != nil {
+		t.Errorf("ERROR: Failed to open file '%s': %v\n", export, err)
+	}
+
+	buf := bufio.NewReader(file)
+	f := NewFrontend(buf, nil, nil)
+	cmds := make([]Cmd, 0)
+	for {
+		cmd, err := f.ReadCmd()
+		if err != nil {
+			if err != io.EOF {
+				t.Errorf("ERROR: Failed to read cmd: %v\n", err)
+			}
+			break
+		}
+		cmds = append(cmds, cmd)
+	}
+	counts := map[string]int{}
+	for _, cmd := range cmds {
+		switch cmd.(type) {
+		case FileRename:
+			f := cmd.(FileRename)
+			assert.Equal(t, "src.txt", f.Src.String())
+			assert.Equal(t, "dst.txt", f.Dst.String())
+			k := fmt.Sprintf("%T", cmd)
+			if _, ok := counts[k]; ok {
+				counts[k] += 1
+			} else {
+				counts[k] = 1
+			}
+		default:
+			k := fmt.Sprintf("%T", cmd)
+			if _, ok := counts[k]; ok {
+				counts[k] += 1
+			} else {
+				counts[k] = 1
+			}
+		}
+	}
+	// assert.Equal(t, "", fmt.Sprintf("%+v", counts))
+	assert.Equal(t, 1, counts["libfastimport.FileModify"])
+	assert.Equal(t, 1, counts["libfastimport.FileRename"])
+}
+
+func TestParseRenameSpaces(t *testing.T) {
+	d := createGitRepo(t)
+	os.Chdir(d)
+	src := "src space.txt"
+	dst := "dst space.txt"
+	writeToFile(src, "contents")
+	runCmd("git add .")
+	runCmd("git commit -m initial")
+	runCmd(fmt.Sprintf("git mv '%s' '%s'", src, dst))
+	runCmd("git add .")
 	runCmd("git commit -m renamed")
 	export := "export.txt"
 	// fast-export with rename detection implemented
@@ -152,8 +215,8 @@ func TestParseRename(t *testing.T) {
 		switch cmd.(type) {
 		case FileRename:
 			f := cmd.(FileRename)
-			assert.Equal(t, "src.txt", f.Src)
-			assert.Equal(t, "dst.txt", f.Dst)
+			assert.Equal(t, src, f.Src.String())
+			assert.Equal(t, dst, f.Dst.String())
 			k := fmt.Sprintf("%T", cmd)
 			if _, ok := counts[k]; ok {
 				counts[k] += 1

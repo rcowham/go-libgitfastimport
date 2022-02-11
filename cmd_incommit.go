@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/shlex"
 	"github.com/pkg/errors"
 )
 
@@ -144,8 +145,19 @@ func (o FileCopy) fiCmdWrite(fiw fiWriter) error {
 }
 func init() { parser_registerCmd("C ", FileCopy{}) }
 func (FileCopy) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
-	// BUG(lukeshu): TODO: commit C not implemented
-	panic("TODO: commit C not implemented")
+	line, err := fir.ReadLine()
+	if err != nil {
+		return nil, err
+	}
+	str := trimLinePrefix(line, "R ")
+	fields, err := shlex.Split(str)
+	if err != nil {
+		return nil, errors.Errorf("filecopy: malformed command: %q", err)
+	}
+	if len(fields) != 2 {
+		return nil, errors.Errorf("filecopy: malformed command: %q", line)
+	}
+	return FileCopy{Src: PathUnescape(fields[0]), Dst: PathUnescape(fields[1])}, nil
 }
 
 // R ///////////////////////////////////////////////////////////////////////////
@@ -154,8 +166,8 @@ func (FileCopy) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 // and causes the CmdCommit to rename an existing file or subdirectory
 // to a different location.
 type FileRename struct {
-	Src string
-	Dst string
+	Src Path
+	Dst Path
 }
 
 func (o FileRename) fiCmdClass() cmdClass { return cmdClassInCommit }
@@ -169,11 +181,14 @@ func (FileRename) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 		return nil, err
 	}
 	str := trimLinePrefix(line, "R ")
-	fields := strings.SplitN(str, " ", 2)
+	fields, err := shlex.Split(str)
+	if err != nil {
+		return nil, errors.Errorf("filerename: malformed command: %q", err)
+	}
 	if len(fields) != 2 {
 		return nil, errors.Errorf("filerename: malformed command: %q", line)
 	}
-	return FileRename{Src: PathUnescape(fields[0]).String(), Dst: PathUnescape(fields[1]).String()}, nil
+	return FileRename{Src: PathUnescape(fields[0]), Dst: PathUnescape(fields[1])}, nil
 }
 
 // deleteall ///////////////////////////////////////////////////////////////////
