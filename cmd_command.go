@@ -134,11 +134,11 @@ func (CmdCommit) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 // This is a synthesized command to simplify reading from a Frontend;
 // it is not really a command in the stream.  It is thus not
 // nescessary to send a CmdCommitEnd command when writing to a
-// Backend.
+// Backend. However git 2.x writes a blank line so we do too.
 type CmdCommitEnd struct{}
 
 func (CmdCommitEnd) fiCmdClass() cmdClass                { return cmdClassInCommit }
-func (CmdCommitEnd) fiCmdWrite(fiw fiWriter) error       { return nil }
+func (CmdCommitEnd) fiCmdWrite(fiw fiWriter) error       { return fiw.WriteLine("") }
 func (CmdCommitEnd) fiCmdRead(fir fiReader) (Cmd, error) { panic("not reached") }
 
 // tag /////////////////////////////////////////////////////////////////////////
@@ -307,7 +307,7 @@ func (CmdBlob) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 
 // alias ///////////////////////////////////////////////////////////////////////
 
-// CmdAlias requests that the Backend record that a merk refers to a
+// CmdAlias requests that the Backend record that a mark refers to a
 // given object without first creating any new object.
 type CmdAlias struct {
 	Mark      int

@@ -215,8 +215,8 @@ func TestParseRenameSpaces(t *testing.T) {
 		switch cmd.(type) {
 		case FileRename:
 			f := cmd.(FileRename)
-			assert.Equal(t, src, f.Src.String())
-			assert.Equal(t, dst, f.Dst.String())
+			assert.Equal(t, src, string(f.Src))
+			assert.Equal(t, dst, string(f.Dst))
 			k := fmt.Sprintf("%T", cmd)
 			if _, ok := counts[k]; ok {
 				counts[k] += 1

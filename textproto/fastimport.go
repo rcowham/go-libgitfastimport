@@ -104,5 +104,8 @@ func (fiw *FIWriter) WriteData(data string) error {
 		return err
 	}
 	_, err = io.WriteString(fiw.w, data)
+	if err == nil && data[len(data)-1] != '\n' {
+		_, err = io.WriteString(fiw.w, "\n")
+	}
 	return err
 }

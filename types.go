@@ -123,7 +123,7 @@ type Path string
 
 // PathEscape escapes a path in case it contains special characters.
 func PathEscape(path Path) string {
-	if strings.HasPrefix(string(path), "\"") || strings.ContainsRune(string(path), '\n') {
+	if strings.HasPrefix(string(path), "\"") || strings.ContainsRune(string(path), ' ') || strings.ContainsRune(string(path), '\n') {
 		return "\"" + strings.Replace(strings.Replace(strings.Replace(string(path), "\\", "\\\\", -1), "\"", "\\\"", -1), "\n", "\\n", -1) + "\""
 	} else {
 		return string(path)
