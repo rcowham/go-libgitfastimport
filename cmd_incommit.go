@@ -40,7 +40,7 @@ type FileModify struct {
 
 func (o FileModify) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileModify) fiCmdWrite(fiw fiWriter) error {
-	return fiw.WriteLine("M", o.Mode, o.DataRef, o.Path)
+	return fiw.WriteLine("M", o.Mode, o.DataRef, PathEscape(o.Path))
 }
 func init() { parser_registerCmd("M ", FileModify{}) }
 func (FileModify) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
@@ -102,7 +102,7 @@ type FileModifyInline struct {
 func (o FileModifyInline) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileModifyInline) fiCmdWrite(fiw fiWriter) error {
 	ez := &ezfiw{fiw: fiw}
-	ez.WriteLine("M", o.Mode, "inline", o.Path)
+	ez.WriteLine("M", o.Mode, "inline", PathEscape(o.Path))
 	ez.WriteData(o.Data)
 	return ez.err
 }
@@ -118,7 +118,7 @@ type FileDelete struct {
 
 func (o FileDelete) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileDelete) fiCmdWrite(fiw fiWriter) error {
-	return fiw.WriteLine("D", o.Path)
+	return fiw.WriteLine("D", PathEscape(o.Path))
 }
 func init() { parser_registerCmd("D ", FileDelete{}) }
 func (FileDelete) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
@@ -141,7 +141,7 @@ type FileCopy struct {
 
 func (o FileCopy) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileCopy) fiCmdWrite(fiw fiWriter) error {
-	return fiw.WriteLine("C", o.Src, o.Dst)
+	return fiw.WriteLine("C", PathEscape(o.Src), PathEscape(o.Dst))
 }
 func init() { parser_registerCmd("C ", FileCopy{}) }
 func (FileCopy) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
@@ -172,7 +172,7 @@ type FileRename struct {
 
 func (o FileRename) fiCmdClass() cmdClass { return cmdClassInCommit }
 func (o FileRename) fiCmdWrite(fiw fiWriter) error {
-	return fiw.WriteLine("R", o.Src, o.Dst)
+	return fiw.WriteLine("R", PathEscape(o.Src), PathEscape(o.Dst))
 }
 func init() { parser_registerCmd("R ", FileRename{}) }
 func (FileRename) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
