@@ -19,8 +19,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/shlex"
 	"github.com/pkg/errors"
+	shlex "github.com/rcowham/go-libgitfastimport/shlex"
 )
 
 // M ///////////////////////////////////////////////////////////////////////////
@@ -149,8 +149,8 @@ func (FileCopy) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 	if err != nil {
 		return nil, err
 	}
-	str := trimLinePrefix(line, "R ")
-	fields, err := shlex.Split(str)
+	str := trimLinePrefix(line, "C ")
+	fields, err := shlex.NewGitLexerString(str).Split()
 	if err != nil {
 		return nil, errors.Errorf("filecopy: malformed command: %q", err)
 	}
@@ -181,7 +181,7 @@ func (FileRename) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 		return nil, err
 	}
 	str := trimLinePrefix(line, "R ")
-	fields, err := shlex.Split(str)
+	fields, err := shlex.NewGitLexerString(str).Split()
 	if err != nil {
 		return nil, errors.Errorf("filerename: malformed command: %q", err)
 	}
