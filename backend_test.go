@@ -129,3 +129,55 @@ func TestRenameSpaces(t *testing.T) {
 	outstr := outbuf.String()
 	assert.Equal(t, string(input), outstr)
 }
+
+func TestWriteNoBreakSpace(t *testing.T) {
+	// Handle NBSP writing like Plastic does (should be quoted but isn't)
+	input := fmt.Sprintf(`blob
+mark :1
+data 8
+contents
+reset refs/heads/main
+commit refs/heads/main
+mark :2
+author Robert Cowham <rcowham@perforce.com> 1687950865 +0100
+committer Robert Cowham <rcowham@perforce.com> 1687950865 +0100
+data 8
+initial
+M 100644 :1 %s
+
+commit refs/heads/main
+mark :3
+author Robert Cowham <rcowham@perforce.com> 1687950865 +0100
+committer Robert Cowham <rcowham@perforce.com> 1687950865 +0100
+data 8
+renamed
+from :2
+R %s dst.txt
+
+`, "src\u00a0.txt", "src\u00a0.txt")
+
+	inbuf := strings.NewReader(string(input))
+	frontend := NewFrontend(inbuf, nil, nil)
+	outbuf := new(bytes.Buffer)
+	bw := bufio.NewWriter(outbuf)
+	mwc := &MyWriteCloser{bw}
+	backend := NewBackend(mwc, nil, nil)
+	for {
+		cmd, err := frontend.ReadCmd()
+		if err != nil {
+			if err != io.EOF {
+				t.Errorf("ERROR: Failed to read cmd: %v\n", err)
+			}
+			break
+		}
+		switch cmd.(type) {
+		case CmdBlob, CmdReset, CmdCommit, CmdCommitEnd, FileModify, FileDelete, FileCopy, FileRename:
+			backend.Do(cmd)
+		default:
+			t.Errorf("Unexpected cmd: %+v\n", cmd)
+		}
+	}
+	bw.Flush()
+	outstr := outbuf.String()
+	assert.Equal(t, strings.Split(input, "\n"), strings.Split(outstr, "\n"))
+}
