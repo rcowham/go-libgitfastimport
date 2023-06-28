@@ -237,6 +237,76 @@ func TestParseRenameSpaces(t *testing.T) {
 	assert.Equal(t, 1, counts["libfastimport.FileRename"])
 }
 
+func TestParseRenameNoBreakSpace(t *testing.T) {
+	// Plastic should write NBSP in quotes but doesn't - sigh!
+	// NBSP = \u00a0 or 0xC2 0xA0
+
+	export := fmt.Sprintf(`blob
+mark :1
+data 8
+contents
+reset refs/heads/main
+commit refs/heads/main
+mark :2
+author Robert Cowham <rcowham@perforce.com> 1687950865 +0100
+committer Robert Cowham <rcowham@perforce.com> 1687950865 +0100
+data 8
+initial
+M 100644 :1 %s
+
+commit refs/heads/main
+mark :3
+author Robert Cowham <rcowham@perforce.com> 1687950865 +0100
+committer Robert Cowham <rcowham@perforce.com> 1687950865 +0100
+data 8
+renamed
+from :2
+R %s dst.txt
+`, "src\u00a0.txt", "src\u00a0.txt")
+
+	src := "src\u00a0.txt"
+	dst := "dst.txt"
+
+	buf := strings.NewReader(export)
+	f := NewFrontend(buf, nil, nil)
+	cmds := make([]Cmd, 0)
+	for {
+		cmd, err := f.ReadCmd()
+		if err != nil {
+			if err != io.EOF {
+				t.Errorf("ERROR: Failed to read cmd: %v\n", err)
+			}
+			break
+		}
+		cmds = append(cmds, cmd)
+	}
+	counts := map[string]int{}
+	for _, cmd := range cmds {
+		switch cmd.(type) {
+		case FileRename:
+			f := cmd.(FileRename)
+			assert.Equal(t, src, string(f.Src))
+			assert.Equal(t, dst, string(f.Dst))
+			k := fmt.Sprintf("%T", cmd)
+			if _, ok := counts[k]; ok {
+				counts[k] += 1
+			} else {
+				counts[k] = 1
+			}
+		default:
+			k := fmt.Sprintf("%T", cmd)
+			if _, ok := counts[k]; ok {
+				counts[k] += 1
+			} else {
+				counts[k] = 1
+			}
+		}
+	}
+	// assert.Equal(t, "", fmt.Sprintf("%+v", counts))
+	assert.Equal(t, 1, counts["libfastimport.FileModify"])
+	assert.Equal(t, 1, counts["libfastimport.FileRename"])
+}
+
 func TestParseRenameQuotes(t *testing.T) {
 	d := createGitRepo(t)
 	os.Chdir(d)

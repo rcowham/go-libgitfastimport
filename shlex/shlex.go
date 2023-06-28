@@ -61,7 +61,7 @@ func (t *DefaultTokenizer) IsQuote(r rune) bool {
 	}
 }
 func (t *DefaultTokenizer) IsWhitespace(r rune) bool {
-	return unicode.IsSpace(r)
+	return unicode.IsSpace(r) && r != '\u00a0' // Special case we don't break on NBSP - to work with Plastic SCM exports...
 }
 func (t *DefaultTokenizer) IsEscape(r rune) bool {
 	return r == '\\'

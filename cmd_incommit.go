@@ -186,7 +186,7 @@ func (FileRename) fiCmdRead(fir fiReader) (cmd Cmd, err error) {
 		return nil, errors.Errorf("filerename: malformed command: %q", err)
 	}
 	if len(fields) != 2 {
-		return nil, errors.Errorf("filerename: malformed command: %q", line)
+		return nil, errors.Errorf("filerename: malformed command expected 2 parts, found: %d %q", len(fields), line)
 	}
 	return FileRename{Src: PathUnescape(fields[0]), Dst: PathUnescape(fields[1])}, nil
 }
